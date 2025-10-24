@@ -99,9 +99,9 @@ export function stopAllSounds() {
 // 设置全局音量
 export function setGlobalVolume(volume: number) {
   if (typeof window === 'undefined') return;
-  
+
   const clampedVolume = Math.max(0, Math.min(1, volume));
-  Object.values(audioCache).forEach(audio => {
+  Object.values(audioPool).flat().forEach(audio => {
     audio.volume = clampedVolume;
   });
 }
