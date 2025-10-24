@@ -85,8 +85,8 @@ export function playSoundDebounced(soundName: keyof typeof SOUNDS, volume: numbe
 // 停止所有音效
 export function stopAllSounds() {
   if (typeof window === 'undefined') return;
-  
-  Object.values(audioCache).forEach(audio => {
+
+  Object.values(audioPool).flat().forEach(audio => {
     try {
       audio.pause();
       audio.currentTime = 0;
