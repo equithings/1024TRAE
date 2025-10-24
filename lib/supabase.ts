@@ -107,7 +107,7 @@ export async function submitScore(data: {
   }
 }
 
-// 获取排行榜（按分数降序，移动次数升序，取前1024名）
+// 获取排行榜（按移动次数升序，分数降序，取前1024名）
 export async function getLeaderboard(
   limit: number = 1024
 ): Promise<{ data: LeaderboardEntry[]; error?: string }> {
@@ -119,8 +119,8 @@ export async function getLeaderboard(
       .from('leaderboard')
       .select('*')
       .eq('is_victory', true) // 只显示胜利的玩家
-      .order('score', { ascending: false }) // 按分数降序
-      .order('play_time', { ascending: true }) // 分数相同时，移动次数越少越好
+      .order('play_time', { ascending: true }) // 主要排序：移动次数越少越好
+      .order('score', { ascending: false }) // 次要排序：分数越高越好
       .order('created_at', { ascending: true }) // 再相同时，早达成者优先
       .limit(actualLimit);
 
