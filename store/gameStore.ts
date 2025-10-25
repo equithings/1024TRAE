@@ -436,6 +436,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       showVictoryDialog: false,
       continueAfterVictory: true,
+      isVictory: false, // 重置胜利状态，允许继续移动
     });
     
     // 保存游戏状态到localStorage
