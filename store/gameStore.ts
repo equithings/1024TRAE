@@ -222,7 +222,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // 移动
   move: (direction: Direction) => {
     const state = get();
-    if (state.isGameOver || state.isVictory) return;
+    // 如果游戏结束，不允许移动
+    if (state.isGameOver) return;
+    // 如果已胜利但未选择继续游戏，不允许移动
+    if (state.isVictory && !state.continueAfterVictory) return;
 
     // 保存当前状态到历史
     const currentState: GameHistory = {
@@ -321,11 +324,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newScore = getMaxTile(newBoard);
     const newBestScore = Math.max(state.bestScore, newScore);
 
-    // 检查胜利条件
-    const victory = checkVictory(newBoard, newCollectedLetters);
+    // 🎁 隐藏彩蛋检测：分数=1024 且 步数=1024
+    const isEasterEgg = newScore === 1024 && state.moveCount + 1 === 1024;
+
+    // 检查胜利条件（只在未选择继续游戏时才设置胜利状态）
+    const victoryConditionMet = checkVictory(newBoard, newCollectedLetters) || isEasterEgg;
+    const victory = !state.continueAfterVictory && victoryConditionMet;
 
     // 检查是否应该显示胜利弹窗（首次达到胜利条件）
-    const shouldShowVictoryDialog = victory && !state.continueAfterVictory && !state.showVictoryDialog;
+    const shouldShowVictoryDialog = victoryConditionMet && !state.continueAfterVictory && !state.showVictoryDialog;
 
     // 检查失败条件
     const gameOver = !canMove(newBoard);
@@ -352,6 +359,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       history: [...state.history, currentState].slice(-10), // 保留最近10步
       mergedPosition: mergedPosition, // 设置合并位置
       letterEffectTriggered: letterEffectTriggered, // 设置字母效果触发状态
+      isEasterEgg1024: isEasterEgg, // 标记彩蛋状态
     };
 
     set(newState);

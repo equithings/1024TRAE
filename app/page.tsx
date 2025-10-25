@@ -16,13 +16,14 @@ export default function Home() {
   const [showVictoryModal, setShowVictoryModal] = useState(false);
 
   // 监听胜利状态，只有在游戏结束时才显示提交弹窗
+  // 如果选择了"继续游戏"后失败，也应该显示提交弹窗
   useEffect(() => {
-    if (isVictory && isGameOver) {
+    if ((isVictory && isGameOver) || (isGameOver && continueAfterVictory)) {
       setShowVictoryModal(true);
     } else {
       setShowVictoryModal(false);
     }
-  }, [isVictory, isGameOver]);
+  }, [isVictory, isGameOver, continueAfterVictory]);
 
   // 预加载音效
   useEffect(() => {
@@ -116,8 +117,8 @@ export default function Home() {
           onClose={() => setShowVictoryModal(false)}
         />
 
-        {/* 失败提示 */}
-        {isGameOver && !isVictory && (
+        {/* 失败提示 - 只在未达成胜利条件且未选择继续游戏时显示 */}
+        {isGameOver && !isVictory && !continueAfterVictory && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl">
               <div className="text-6xl mb-4">😔</div>
