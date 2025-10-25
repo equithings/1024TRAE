@@ -17,6 +17,7 @@ export async function submitScore(data: {
   isVictory: boolean;
   playTime: number;
   isEasterEgg?: boolean; // 彩蛋标记
+  playerId?: string; // 玩家唯一标识符（可选）
 }): Promise<{ success: boolean; error?: string }> {
   try {
     // === 防刷分验证 ===
@@ -98,6 +99,7 @@ export async function submitScore(data: {
         letters_collected: data.lettersCollected,
         is_victory: data.isVictory,
         play_time: data.playTime,
+        player_id: data.playerId || null, // 玩家唯一标识符（可选）
       },
     ]);
 

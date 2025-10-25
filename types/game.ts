@@ -47,6 +47,7 @@ export interface LeaderboardEntry {
   is_victory: boolean;
   play_time: number;
   created_at: string;
+  player_id?: string; // 玩家唯一标识符（可选）
 }
 
 export interface GameHistory {

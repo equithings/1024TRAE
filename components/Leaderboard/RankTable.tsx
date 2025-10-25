@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LeaderboardEntry } from '@/types/game';
 import { getLeaderboard } from '@/lib/supabase';
+import { getCurrentPlayerId } from '@/lib/player-identity';
 
 export default function RankTable() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -13,9 +14,12 @@ export default function RankTable() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [showScrollHint, setShowScrollHint] = useState(true); // 滑动提示
+  const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null); // 当前玩家 ID
 
   useEffect(() => {
     loadLeaderboard();
+    // 获取当前玩家 ID（如果存在）
+    setCurrentPlayerId(getCurrentPlayerId());
   }, []);
 
   // 3秒后自动隐藏滑动提示
@@ -147,6 +151,9 @@ export default function RankTable() {
                                entry.letters_collected.length === 5 &&
                                entry.letters_collected.join('') === 'TRAEN';
 
+              // 检测是否为当前玩家的记录
+              const isMyRecord = currentPlayerId && entry.player_id === currentPlayerId;
+
               return (
                 <tr
                   key={entry.id}
@@ -156,6 +163,7 @@ export default function RankTable() {
                     ${isEasterEgg ? 'bg-gradient-to-r from-yellow-100 via-pink-100 to-purple-100' : ''}
                     ${hasTraenb ? 'bg-gradient-to-r from-purple-50 via-blue-50 to-green-50' : ''}
                     ${hasTraen ? 'bg-gradient-to-r from-blue-50 to-green-50' : ''}
+                    ${isMyRecord ? 'ring-2 ring-trae-blue ring-inset bg-blue-50/30' : ''}
                   `}
                 >
                   <td className="px-6 py-4">

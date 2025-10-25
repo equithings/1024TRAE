@@ -4,8 +4,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '@/store/gameStore';
-import { submitScore, markGameAsSubmitted } from '@/lib/supabase';
+import { useGameStore, markGameAsSubmitted } from '@/store/gameStore';
+import { submitScore } from '@/lib/supabase';
+import { getOrCreatePlayerId } from '@/lib/player-identity';
 
 interface EasterEgg1048576ModalProps {
   isVisible: boolean;
@@ -28,6 +29,9 @@ export default function EasterEgg1048576Modal({ isVisible }: EasterEgg1048576Mod
     setSubmitting(true);
     setSubmitError('');
 
+    // 获取或创建玩家唯一标识符
+    const playerId = getOrCreatePlayerId();
+
     const result = await submitScore({
       playerName: playerName.trim(),
       score,
@@ -36,6 +40,7 @@ export default function EasterEgg1048576Modal({ isVisible }: EasterEgg1048576Mod
       isVictory: true,
       playTime: 1024, // 彩蛋固定步数
       isEasterEgg: true, // 标记为彩蛋
+      playerId, // 玩家唯一标识符
     });
 
     setSubmitting(false);

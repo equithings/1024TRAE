@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { submitScore } from '@/lib/supabase';
 import { useGameStore, markGameAsSubmitted } from '@/store/gameStore';
+import { getOrCreatePlayerId } from '@/lib/player-identity';
 
 interface VictoryModalProps {
   isVisible: boolean;
@@ -43,6 +44,9 @@ export default function VictoryModal({
     setError('');
 
     try {
+      // 获取或创建玩家唯一标识符
+      const playerId = getOrCreatePlayerId();
+
       // 🎁 彩蛋特殊处理：score=1024 且 moveCount=1024
       const submitData = isEasterEgg1024
         ? {
@@ -53,6 +57,7 @@ export default function VictoryModal({
             isVictory: true,
             playTime: moveCount,
             isEasterEgg: true, // 标记为彩蛋
+            playerId, // 玩家唯一标识符
           }
         : {
             playerName: playerName.trim(),
@@ -61,6 +66,7 @@ export default function VictoryModal({
             lettersCollected: collectedLetters,
             isVictory: true,
             playTime: moveCount,
+            playerId, // 玩家唯一标识符
           };
 
       const result = await submitScore(submitData);
