@@ -82,9 +82,7 @@ pnpm dev
 
 在 Supabase Dashboard 的 SQL Editor 中执行：
 
-```sql
--- 复制 supabase/migrations/001_leaderboard.sql 的内容
-```
+
 
 ### 3. 获取 API 密钥
 
@@ -170,23 +168,6 @@ game/
 | **Zustand** | 轻量级状态管理 |
 | **Framer Motion** | 动画库 |
 | **Supabase** | 后端服务（数据库+认证） |
-| **Vercel** | 部署平台 |
-
----
-
-## 🚢 部署到 Vercel
-
-### 一键部署
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/trae-1024-game)
-
-### 手动部署
-
-1. 在 [Vercel](https://vercel.com) 导入 GitHub 仓库
-2. 配置环境变量：
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. 点击 **Deploy**
 
 ---
 
@@ -212,11 +193,7 @@ pnpm start
 
 ---
 
-## 📝 开发日志
 
-查看 [PRD.md](./PRD.md) 了解完整的产品需求文档。
-
----
 
 ## 🤝 贡献指南
 
@@ -233,13 +210,6 @@ pnpm start
 ## 📄 License
 
 MIT License - 详见 [LICENSE](./LICENSE) 文件
-
----
-
-## 💬 联系方式
-
-- 问题反馈：[GitHub Issues](https://github.com/yourusername/trae-1024-game/issues)
-- 邮箱：your.email@example.com
 
 ---
 
