@@ -14,6 +14,11 @@ import {
   canCollectLetter,
   collectLetter,
   applyREffect,
+  applyTEffect,
+  applyAEffect,
+  applyEEffect,
+  applySpecialEffect1,
+  applySpecialEffect2,
   isLetter,
 } from '@/lib/letter-system';
 import { playSound, playSoundDebounced } from '@/lib/sounds';
@@ -27,24 +32,33 @@ interface GameStore {
   collectedLetters: Letter[];
   isGameOver: boolean;
   isVictory: boolean;
+  showVictoryDialog: boolean; // 显示胜利弹窗
+  continueAfterVictory: boolean; // 胜利后继续游戏
   canUndo: boolean;
   moveCount: number;
   startTime: number;
-  
+  minTileValue: number; // 最小方块值（N/B字母效果）
+  isEasterEgg1024: boolean; // 1024×1024 隐藏彩蛋标记
+
   // 字母效果状态
   showPreview: boolean; // T字母效果
   previewValue: TileValue | null;
   undoAvailable: boolean; // E字母效果
-  
+
+  // 合并动画状态
+  mergedPosition: { row: number; col: number } | null;
+
   // 历史记录
   history: GameHistory[];
-  
+
   // Actions
   initGame: () => void;
   move: (direction: Direction) => void;
   undo: () => void;
   restart: () => void;
   setBestScore: (score: number) => void;
+  continueGame: () => void; // 继续游戏
+  endGame: () => void; // 结束游戏
 }
 
 const BEST_SCORE_KEY = 'trae-1024-best-score';
@@ -70,19 +84,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
   collectedLetters: [],
   isGameOver: false,
   isVictory: false,
+  showVictoryDialog: false,
+  continueAfterVictory: false,
   canUndo: false,
   moveCount: 0,
   startTime: Date.now(),
+  minTileValue: 4,
+  isEasterEgg1024: false,
   showPreview: false,
   previewValue: null,
   undoAvailable: false,
   history: [],
+  mergedPosition: null,
 
   // 初始化游戏
   initGame: () => {
     const board = initializeBoard();
     const savedBestScore = loadBestScore(); // 客户端加载最高分
-    
+
     set({
       board,
       score: 0,
@@ -90,13 +109,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       collectedLetters: [],
       isGameOver: false,
       isVictory: false,
+      showVictoryDialog: false,
+      continueAfterVictory: false,
       canUndo: false,
       moveCount: 0,
       startTime: Date.now(),
+      minTileValue: 4,
       showPreview: false,
       previewValue: null,
       undoAvailable: false,
       history: [],
+      mergedPosition: null,
     });
   },
 
@@ -112,7 +135,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       collectedLetters: [...state.collectedLetters],
     };
 
-    const { newBoard, moved, mergedScore, letterCollisions } = gameMove(
+    let { newBoard, moved, mergedScore, letterCollisions, mergedPosition } = gameMove(
       state.board,
       direction,
       state.collectedLetters
@@ -130,62 +153,66 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let showPreviewFlag = state.showPreview;
     let previewValueFlag = state.previewValue;
     let undoAvailableFlag = state.undoAvailable;
-
-    console.log('字母碰撞记录:', letterCollisions);
-    console.log('当前已收集:', newCollectedLetters);
+    let newMinTileValue = state.minTileValue;
 
     for (const collision of letterCollisions) {
       const { letter, value } = collision;
-      
-      console.log(`处理碰撞: 字母${letter}, 数字${value}`);
-      
+
+      // 彩蛋字母 N 和 B 可以直接收集
+      if (letter === 'N' || letter === 'B') {
+        newCollectedLetters = [...newCollectedLetters, letter];
+
+        // 应用彩蛋字母效果
+        if (letter === 'N') {
+          newBoard = applySpecialEffect1(newBoard);
+          newMinTileValue = 128;
+          playSound('collect', 0.4);
+        } else if (letter === 'B') {
+          newBoard = applySpecialEffect2(newBoard);
+          newMinTileValue = 512;
+          playSound('collect', 0.4);
+        }
+        continue;
+      }
+
       // 检查是否可以收集（必须按顺序）
       if (canCollectLetter(letter, newCollectedLetters)) {
-        console.log(`可以收集字母${letter}`);
         // 收集字母
         const result = collectLetter(letter, newCollectedLetters);
         if (result.collected) {
           newCollectedLetters = result.newCollectedLetters;
-          console.log(`成功收集字母${letter}, 现在已收集:`, newCollectedLetters);
-          
+
           // 应用字母效果
           switch (letter) {
             case 'T':
-              // Think - 显示下一个方块预览
-              showPreviewFlag = true;
-              previewValueFlag = 2;
-              setTimeout(() => {
-                set({ showPreview: false, previewValue: null });
-              }, 3000);
+              // Think - 将所有数字从大到小重新排列
+              newBoard = applyTEffect(newBoard);
               playSound('collect', 0.4);
               break;
-            
+
             case 'R':
-              // Real - 碰撞时数字已经×2了
+              // Real - 碰撞时数字已经×2了，这里不需要额外操作
               playSound('collect', 0.4);
               break;
-            
+
             case 'A':
-              // Adaptive - 可以后续添加AI提示
+              // Adaptive - 消除<32的方块，生成8个32的方块
+              newBoard = applyAEffect(newBoard);
               playSound('collect', 0.4);
               break;
-            
+
             case 'E':
-              // Engineer - 获得撤销机会
-              undoAvailableFlag = true;
+              // Engineer - 保留最大数字×4，清除其他所有数字
+              newBoard = applyEEffect(newBoard);
               playSound('collect', 0.4);
               break;
           }
-        } else {
-          console.log(`收集字母${letter}失败`);
         }
-      } else {
-        console.log(`不能收集字母${letter}，当前已收集:`, newCollectedLetters);
       }
     }
 
     // 添加随机方块
-    addRandomTile(newBoard, newCollectedLetters);
+    addRandomTile(newBoard, newCollectedLetters, newMinTileValue);
 
     // 计算当前最大数字作为分数
     const newScore = getMaxTile(newBoard);
@@ -194,8 +221,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 检查胜利条件
     const victory = checkVictory(newBoard, newCollectedLetters);
 
+    // 检查是否应该显示胜利弹窗（首次达到胜利条件）
+    const shouldShowVictoryDialog = victory && !state.continueAfterVictory && !state.showVictoryDialog;
+
     // 检查失败条件
-    const gameOver = !victory && !canMove(newBoard);
+    const gameOver = !canMove(newBoard);
 
     // 保存最高分
     if (newBestScore > state.bestScore) {
@@ -208,14 +238,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
       bestScore: newBestScore,
       collectedLetters: newCollectedLetters,
       isVictory: victory,
+      showVictoryDialog: shouldShowVictoryDialog,
       isGameOver: gameOver,
       moveCount: state.moveCount + 1,
+      minTileValue: newMinTileValue,
       canUndo: state.undoAvailable,
       showPreview: showPreviewFlag,
       previewValue: previewValueFlag,
       undoAvailable: undoAvailableFlag,
       history: [...state.history, currentState].slice(-10), // 保留最近10步
+      mergedPosition: mergedPosition, // 设置合并位置
     });
+    
+    // 200ms 后清除合并位置，结束动画
+    if (mergedPosition !== null) {
+      setTimeout(() => {
+        set({ mergedPosition: null });
+      }, 200);
+    }
   },
 
   // 撤销
@@ -245,5 +285,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setBestScore: (score: number) => {
     saveBestScore(score);
     set({ bestScore: score });
+  },
+
+  // 继续游戏
+  continueGame: () => {
+    set({
+      showVictoryDialog: false,
+      continueAfterVictory: true,
+    });
+  },
+
+  // 结束游戏（如果满足通关条件则提交排行榜）
+  endGame: () => {
+    const state = get();
+
+    // 🎁 隐藏彩蛋检测：分数=1024 且 步数=1024
+    const isEasterEgg = state.score === 1024 && state.moveCount === 1024;
+
+    // 检查是否满足通关条件：收集完 TRAE + 分数不低于 1024
+    const hasAllLetters = state.collectedLetters.includes('T') &&
+                          state.collectedLetters.includes('R') &&
+                          state.collectedLetters.includes('A') &&
+                          state.collectedLetters.includes('E');
+    const has1024 = state.score >= 1024;
+    const meetsVictoryCondition = hasAllLetters && has1024;
+
+    set({
+      showVictoryDialog: false,
+      isGameOver: true,
+      isVictory: meetsVictoryCondition || isEasterEgg, // 彩蛋也算胜利
+      isEasterEgg1024: isEasterEgg, // 标记彩蛋状态
+    });
   },
 }));

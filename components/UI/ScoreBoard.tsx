@@ -2,25 +2,18 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 
 export default function ScoreBoard() {
-  const { score, bestScore } = useGameStore();
-  const [mounted, setMounted] = useState(false);
-
-  // 只在客户端渲染后显示最高分，避免水合错误
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { score, moveCount } = useGameStore();
 
   return (
     <div className="flex gap-4">
       <ScoreBox label="最大方块" value={score} />
-      <ScoreBox 
-        label="最高记录" 
-        value={mounted ? bestScore : 0} 
-        highlight 
+      <ScoreBox
+        label="当前步数"
+        value={moveCount}
+        highlight
       />
     </div>
   );

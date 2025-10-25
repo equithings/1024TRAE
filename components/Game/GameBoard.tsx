@@ -10,7 +10,7 @@ import MoveIndicator from './MoveIndicator';
 import { Direction } from '@/types/game';
 
 export default function GameBoard() {
-  const { board, move, initGame } = useGameStore();
+  const { board, move, initGame, mergedPosition } = useGameStore();
   const [lastDirection, setLastDirection] = useState<Direction | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -71,8 +71,8 @@ export default function GameBoard() {
     <div
       ref={boardRef}
       className="relative bg-[#BBADA0] rounded-lg
-                 w-full max-w-[460px] aspect-square
-                 min-w-[320px]
+                 w-full max-w-[600px] aspect-square
+                 min-w-[280px]
                  mx-auto
                  touch-none select-none"
     >
@@ -80,10 +80,10 @@ export default function GameBoard() {
       <MoveIndicator direction={lastDirection} />
       
       {/* 网格背景和方块层 */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-3 absolute inset-0 p-2 sm:p-3">
-        {Array.from({ length: 25 }).map((_, i) => {
-          const row = Math.floor(i / 5);
-          const col = i % 5;
+      <div className="grid grid-cols-4 gap-[0.4rem] sm:gap-3 absolute inset-0 p-[0.4rem] sm:p-3">
+        {Array.from({ length: 16 }).map((_, i) => {
+          const row = Math.floor(i / 4);
+          const col = i % 4;
           const cellValue = board[row][col];
 
           return (
@@ -97,6 +97,11 @@ export default function GameBoard() {
                   key={`${row}-${col}-${cellValue}`}
                   value={cellValue}
                   position={{ row, col }}
+                  isMerged={
+                    mergedPosition !== null &&
+                    mergedPosition.row === row &&
+                    mergedPosition.col === col
+                  }
                 />
               )}
             </div>

@@ -16,6 +16,8 @@ export default function ProgressBar() {
     R: 'from-trae-red to-red-400',
     A: 'from-trae-green to-green-400',
     E: 'from-trae-purple to-purple-400',
+    N: 'from-trae-green to-green-400',
+    B: 'from-trae-green to-green-400',
   };
 
   return (

@@ -39,3 +39,10 @@ web/
 deploy.ps1
 .github/
 doc/
+# 忽略所有 .md 文件
+*.md
+*.txt
+.ps1
+
+# 但是不忽略 README.md
+!README.md

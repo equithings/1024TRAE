@@ -24,7 +24,8 @@ export default function VictoryModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const { restart, moveCount } = useGameStore();
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const { restart, moveCount, isEasterEgg1024 } = useGameStore();
 
   const handleSubmit = async () => {
     if (!playerName.trim()) {
@@ -41,14 +42,27 @@ export default function VictoryModal({
     setError('');
 
     try {
-      const result = await submitScore({
-        playerName: playerName.trim(),
-        score,
-        maxTile: 1024,
-        lettersCollected: collectedLetters,
-        isVictory: true,
-        playTime: moveCount,
-      });
+      // 🎁 彩蛋特殊处理：score=1024 且 moveCount=1024
+      const submitData = isEasterEgg1024
+        ? {
+            playerName: playerName.trim(),
+            score: 1024 * 1024, // 1024×1024 = 1048576
+            maxTile: 1024,
+            lettersCollected: ['TRAENB4EVER'], // 特殊字母显示
+            isVictory: true,
+            playTime: moveCount,
+            isEasterEgg: true, // 标记为彩蛋
+          }
+        : {
+            playerName: playerName.trim(),
+            score,
+            maxTile: 1024,
+            lettersCollected: collectedLetters,
+            isVictory: true,
+            playTime: moveCount,
+          };
+
+      const result = await submitScore(submitData);
 
       if (result.success) {
         setSubmitted(true);
@@ -62,12 +76,28 @@ export default function VictoryModal({
     }
   };
 
-  const handlePlayAgain = () => {
+  // 尝试跳过 - 如果未提交则显示确认对话框
+  const handleTrySkip = () => {
+    if (!submitted) {
+      setShowConfirmDialog(true);
+    } else {
+      handleConfirmSkip();
+    }
+  };
+
+  // 确认跳过 - 真正关闭并重新开始
+  const handleConfirmSkip = () => {
     restart();
     onClose();
     setPlayerName('');
     setSubmitted(false);
     setError('');
+    setShowConfirmDialog(false);
+  };
+
+  // 取消跳过 - 关闭确认对话框，返回提交界面
+  const handleCancelSkip = () => {
+    setShowConfirmDialog(false);
   };
 
   return (
@@ -78,7 +108,7 @@ export default function VictoryModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
-          onClick={(e) => e.target === e.currentTarget && onClose()}
+          onClick={(e) => e.target === e.currentTarget && handleTrySkip()}
         >
           <motion.div
             initial={{ scale: 0.8, y: 20 }}
@@ -168,7 +198,7 @@ export default function VictoryModal({
                     {isSubmitting ? '提交中...' : '提交到排行榜'}
                   </button>
                   <button
-                    onClick={handlePlayAgain}
+                    onClick={handleTrySkip}
                     className="px-6 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >
                     跳过
@@ -177,7 +207,7 @@ export default function VictoryModal({
               ) : (
                 <>
                   <button
-                    onClick={handlePlayAgain}
+                    onClick={handleConfirmSkip}
                     className="flex-1 bg-gradient-to-r from-trae-blue to-trae-purple text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                   >
                     再来一局
@@ -191,6 +221,56 @@ export default function VictoryModal({
                 </>
               )}
             </div>
+
+            {/* 确认跳过对话框 */}
+            <AnimatePresence>
+              {showConfirmDialog && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center rounded-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    transition={{ type: 'spring', damping: 20 }}
+                    className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-2xl"
+                  >
+                    <div className="text-center mb-6">
+                      <div className="text-5xl mb-4">⚠️</div>
+                      <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                        确认跳过？
+                      </h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        跳过后<span className="font-bold text-red-600">不会记录您的分数和排名</span>，
+                        您将失去上榜的机会。
+                      </p>
+                      <p className="text-gray-500 text-sm mt-3">
+                        确定要放弃提交成绩吗？
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleCancelSkip}
+                        className="flex-1 bg-gradient-to-r from-trae-blue to-trae-purple text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                      >
+                        返回提交
+                      </button>
+                      <button
+                        onClick={handleConfirmSkip}
+                        className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                      >
+                        确认跳过
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       )}

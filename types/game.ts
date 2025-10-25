@@ -2,9 +2,9 @@
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
-export type TileValue = number | 'T' | 'R' | 'A' | 'E';
+export type TileValue = number | 'T' | 'R' | 'A' | 'E' | 'N' | 'B';
 
-export type Letter = 'T' | 'R' | 'A' | 'E';
+export type Letter = 'T' | 'R' | 'A' | 'E' | 'N' | 'B';
 
 export interface Tile {
   id: string;

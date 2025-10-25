@@ -6,19 +6,23 @@ import GameBoard from '@/components/Game/GameBoard';
 import ProgressBar from '@/components/UI/ProgressBar';
 import ScoreBoard from '@/components/UI/ScoreBoard';
 import VictoryModal from '@/components/UI/VictoryModal';
+import VictoryDialog from '@/components/UI/VictoryDialog';
+import LetterTips from '@/components/UI/LetterTips';
 import { useGameStore } from '@/store/gameStore';
 import { preloadSounds } from '@/lib/sounds';
 
 export default function Home() {
-  const { restart, isGameOver, isVictory, score, collectedLetters, moveCount } = useGameStore();
+  const { restart, endGame, isGameOver, isVictory, score, collectedLetters, moveCount, continueAfterVictory } = useGameStore();
   const [showVictoryModal, setShowVictoryModal] = useState(false);
 
-  // 监听胜利状态，显示弹窗
+  // 监听胜利状态，只有在游戏结束时才显示提交弹窗
   useEffect(() => {
-    if (isVictory) {
+    if (isVictory && isGameOver) {
       setShowVictoryModal(true);
+    } else {
+      setShowVictoryModal(false);
     }
-  }, [isVictory]);
+  }, [isVictory, isGameOver]);
 
   // 预加载音效
   useEffect(() => {
@@ -27,7 +31,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#FAF8EF] to-[#F0EDE4] flex items-center justify-center p-2 sm:p-4">
-      <div className="max-w-2xl w-full space-y-3 sm:space-y-6">
+      <div className="max-w-5xl w-full space-y-3 sm:space-y-6">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-[#32F08C] via-[#28D47C] to-[#1EB86C] bg-clip-text text-transparent mb-1 sm:mb-2">
@@ -42,17 +46,46 @@ export default function Home() {
         {/* 分数和控制 */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
           <ScoreBoard />
-          <button
-            onClick={restart}
-            className="bg-gradient-to-r from-trae-primary to-emerald-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity shadow-md text-sm sm:text-base w-full sm:w-auto"
-          >
-            🔄 重新开始
-          </button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={restart}
+              className="flex-1 sm:flex-none bg-gradient-to-r from-trae-primary to-emerald-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity shadow-md text-sm sm:text-base"
+            >
+              🔄 重新开始
+            </button>
+            {/* 只有在选择继续游戏后才显示终止游戏按钮 */}
+            {continueAfterVictory && (
+              <button
+                onClick={endGame}
+                className="flex-1 sm:flex-none bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity shadow-md text-sm sm:text-base"
+              >
+                🏁 终止游戏
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* 游戏板 */}
-        <div className="flex justify-center">
-          <GameBoard />
+        {/* 排行榜链接 - 靠右显示 */}
+        <div className="flex justify-end">
+          <Link
+            href="/leaderboard"
+            className="inline-flex items-center gap-2 bg-white rounded-lg px-4 py-2 shadow-md text-trae-blue hover:text-trae-purple hover:bg-gray-50 transition-all text-sm sm:text-base font-semibold"
+          >
+            🏆 查看排行榜
+          </Link>
+        </div>
+
+        {/* 游戏板和字母效果说明 - 并排显示 */}
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:items-start">
+          {/* 左侧：游戏板 - PC端占60%-80%宽度 */}
+          <div className="w-full lg:flex-1 lg:min-w-[60%] lg:max-w-[80%] flex justify-center">
+            <GameBoard />
+          </div>
+
+          {/* 右侧：字母效果说明 - 占剩余空间 */}
+          <div className="w-full lg:flex-shrink-0 lg:w-auto lg:min-w-[280px] lg:max-w-[320px]">
+            <LetterTips />
+          </div>
         </div>
 
         {/* 操作提示 */}
@@ -68,15 +101,12 @@ export default function Home() {
             <span className="sm:hidden">👆 滑动屏幕移动方块</span>
           </p>
           <p className="text-gray-500 text-xs mt-2">
-            按顺序收集 T→R→A→E 字母（数字方块碰撞字母后×2），达成1024获得胜利！
+            按顺序收集 T→R→A→E 字母，分数打到1024，您可能会上榜，但也许会有更多可能
           </p>
-          <Link
-            href="/leaderboard"
-            className="inline-block mt-2 sm:mt-3 text-trae-blue hover:text-trae-purple transition-colors text-xs sm:text-sm font-semibold"
-          >
-            🏆 查看排行榜
-          </Link>
         </div>
+
+        {/* 胜利确认弹窗 - 询问是否继续游戏 */}
+        <VictoryDialog />
 
         {/* 胜利弹窗 - 包含用户名输入 */}
         <VictoryModal

@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>排行榜显示前1024名玩家（按移动次数排序，越少越好）</p>
           <p className="mt-1">
-            🎯 提示：同时收集TRAE字母并达成1024才算真正胜利！
+            🎯 提示：同时收集TRAE字母并达成1024就有机会上榜,当然1024的个数应该没有限制
           </p>
         </div>
       </div>

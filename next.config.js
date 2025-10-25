@@ -5,9 +5,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // GitHub Pages 部署配置
-  basePath: '/1024TRAE',
-  assetPrefix: '/1024TRAE',
+  // GitHub Pages 部署配置（仅生产环境）
+  basePath: process.env.NODE_ENV === 'production' ? '/1024TRAE' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/1024TRAE' : '',
 }
 
 module.exports = nextConfig

@@ -130,23 +130,33 @@ export default function RankTable() {
                       }
                     `}
                   >
-                    {entry.max_tile}
+                    {entry.max_tile >= 1024
+                      ? `${(entry.max_tile / 1024).toFixed(3).replace(/\.?0+$/, '')}×1024`
+                      : entry.max_tile}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <div className="flex justify-center gap-1">
-                    {entry.letters_collected.map((letter, i) => (
-                      <span
-                        key={i}
-                        className="inline-block w-6 h-6 bg-trae-blue text-white rounded text-xs font-bold flex items-center justify-center"
-                      >
-                        {letter}
-                      </span>
-                    ))}
-                    {entry.letters_collected.length === 0 && (
-                      <span className="text-gray-400 text-sm">-</span>
-                    )}
-                  </div>
+                  {/* 检测彩蛋字母：TRAENB4EVER */}
+                  {entry.letters_collected.length === 1 &&
+                   entry.letters_collected[0] === 'TRAENB4EVER' ? (
+                    <span className="inline-block px-3 py-1 bg-gradient-to-r from-yellow-400 via-red-400 to-purple-500 text-white rounded-full text-xs font-bold animate-pulse">
+                      🎁 TRAENB4EVER
+                    </span>
+                  ) : (
+                    <div className="flex justify-center gap-1">
+                      {entry.letters_collected.map((letter, i) => (
+                        <span
+                          key={i}
+                          className="inline-block w-6 h-6 bg-trae-blue text-white rounded text-xs font-bold flex items-center justify-center"
+                        >
+                          {letter}
+                        </span>
+                      ))}
+                      {entry.letters_collected.length === 0 && (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-right text-sm text-gray-500">
                   {new Date(entry.created_at).toLocaleDateString('zh-CN')}

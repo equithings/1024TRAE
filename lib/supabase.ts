@@ -16,6 +16,7 @@ export async function submitScore(data: {
   lettersCollected: string[];
   isVictory: boolean;
   playTime: number;
+  isEasterEgg?: boolean; // 彩蛋标记
 }): Promise<{ success: boolean; error?: string }> {
   try {
     // === 防刷分验证 ===
@@ -30,41 +31,53 @@ export async function submitScore(data: {
       return { success: false, error: '请输入有效的玩家名称' };
     }
 
-    // 2. 验证分数合理性（5x5棋盘最大可能分数约为8192）
-    if (data.score < 0 || data.score > 10000) {
-      return { success: false, error: '分数异常，请勿作弊' };
-    }
-
-    // 3. 验证最大方块必须是2的幂
-    const validTiles = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192];
-    if (!validTiles.includes(data.maxTile)) {
-      return { success: false, error: '最大方块数值异常' };
-    }
-
-    // 4. 验证胜利条件
-    if (data.isVictory) {
-      // 必须收集完整TRAE字母
-      if (!data.lettersCollected || data.lettersCollected.length !== 4) {
-        return { success: false, error: '字母收集不完整' };
+    // 🎁 彩蛋特殊处理：绕过某些验证
+    if (data.isEasterEgg) {
+      // 彩蛋允许特殊的分数和字母
+      if (data.score !== 1024 * 1024) {
+        return { success: false, error: '彩蛋数据异常' };
+      }
+      if (data.playTime !== 1024) {
+        return { success: false, error: '彩蛋条件不满足' };
+      }
+      // 跳过后续验证，直接进入插入逻辑
+    } else {
+      // 2. 验证分数合理性（5x5棋盘最大可能分数约为8192）
+      if (data.score < 0 || data.score > 10000) {
+        return { success: false, error: '分数异常，请勿作弊' };
       }
 
-      // 必须按顺序收集
-      const expectedSequence = ['T', 'R', 'A', 'E'];
-      for (let i = 0; i < 4; i++) {
-        if (data.lettersCollected[i] !== expectedSequence[i]) {
-          return { success: false, error: '字母顺序错误' };
+      // 3. 验证最大方块必须是2的幂
+      const validTiles = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192];
+      if (!validTiles.includes(data.maxTile)) {
+        return { success: false, error: '最大方块数值异常' };
+      }
+
+      // 4. 验证胜利条件
+      if (data.isVictory) {
+        // 必须收集完整TRAE字母
+        if (!data.lettersCollected || data.lettersCollected.length !== 4) {
+          return { success: false, error: '字母收集不完整' };
+        }
+
+        // 必须按顺序收集
+        const expectedSequence = ['T', 'R', 'A', 'E'];
+        for (let i = 0; i < 4; i++) {
+          if (data.lettersCollected[i] !== expectedSequence[i]) {
+            return { success: false, error: '字母顺序错误' };
+          }
+        }
+
+        // 必须达成1024
+        if (data.maxTile !== 1024) {
+          return { success: false, error: '未达成1024方块' };
         }
       }
 
-      // 必须达成1024
-      if (data.maxTile !== 1024) {
-        return { success: false, error: '未达成1024方块' };
+      // 5. 验证移动次数合理性（最少需要10步才能完成）
+      if (data.isVictory && data.playTime < 10) {
+        return { success: false, error: '移动次数过少，数据异常' };
       }
-    }
-
-    // 5. 验证移动次数合理性（最少需要10步才能完成）
-    if (data.isVictory && data.playTime < 10) {
-      return { success: false, error: '移动次数过少，数据异常' };
     }
 
     // 6. 限制提交频率（本地存储，10秒内不能重复提交）
@@ -107,7 +120,7 @@ export async function submitScore(data: {
   }
 }
 
-// 获取排行榜（按移动次数升序，分数降序，取前1024名）
+// 获取排行榜（按最大方块降序，移动次数升序，取前1024名）
 export async function getLeaderboard(
   limit: number = 1024
 ): Promise<{ data: LeaderboardEntry[]; error?: string }> {
@@ -119,8 +132,8 @@ export async function getLeaderboard(
       .from('leaderboard')
       .select('*')
       .eq('is_victory', true) // 只显示胜利的玩家
-      .order('play_time', { ascending: true }) // 主要排序：移动次数越少越好
-      .order('score', { ascending: false }) // 次要排序：分数越高越好
+      .order('max_tile', { ascending: false }) // 主要排序：最大方块越大越好
+      .order('play_time', { ascending: true }) // 次要排序：移动次数越少越好
       .order('created_at', { ascending: true }) // 再相同时，早达成者优先
       .limit(actualLimit);
 

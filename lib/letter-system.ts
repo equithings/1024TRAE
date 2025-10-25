@@ -8,30 +8,44 @@ export const letterEffects: Record<Letter, LetterEffect> = {
   T: {
     letter: 'T',
     name: 'Think (思考)',
-    description: '显示下一个将生成的方块（预览3秒）',
+    description: '将所有数字从大到小重新排列',
     color: '#0084FF',
-    execute: (board) => board, // T效果在UI层实现
+    execute: applyTEffect,
   },
   R: {
     letter: 'R',
     name: 'Real (真实)',
-    description: '碰撞的数字方块×2',
+    description: '碰撞任何数字都会×2',
     color: '#FF3B30',
     execute: (board) => board, // R效果在碰撞时实现
   },
   A: {
     letter: 'A',
     name: 'Adaptive (自适应)',
-    description: '自动执行一次最优移动',
+    description: '消除<32的方块，生成8个32方块',
     color: '#34C759',
-    execute: (board) => board, // A效果需要AI算法
+    execute: applyAEffect,
   },
   E: {
     letter: 'E',
     name: 'Engineer (工程师)',
-    description: '获得一次撤销机会',
+    description: '保留最大数字×4，清除其他',
     color: '#AF52DE',
-    execute: (board) => board, // E效果在状态管理层实现
+    execute: applyEEffect,
+  },
+  N: {
+    letter: 'N',
+    name: '???',
+    description: '???',
+    color: '#34C759',
+    execute: applySpecialEffect1,
+  },
+  B: {
+    letter: 'B',
+    name: '???',
+    description: '???',
+    color: '#34C759',
+    execute: applySpecialEffect2,
   },
 };
 
@@ -66,29 +80,181 @@ export function collectLetter(
   return { newCollectedLetters, collected: true };
 }
 
-// 应用R字母效果（数字×2）
+// T字母效果：将所有数字从大到小重新排列（从左上到右下）
+export function applyTEffect(board: (TileValue | null)[][]): (TileValue | null)[][] {
+  const newBoard: (TileValue | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+
+  // 收集所有数字方块
+  const numbers: number[] = [];
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      const cell = board[row][col];
+      if (typeof cell === 'number') {
+        numbers.push(cell);
+      }
+    }
+  }
+
+  // 从大到小排序
+  numbers.sort((a, b) => b - a);
+
+  // 从左上到右下依次填充
+  let index = 0;
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      if (index < numbers.length) {
+        newBoard[row][col] = numbers[index];
+        index++;
+      }
+    }
+  }
+
+  return newBoard;
+}
+
+// R字母效果：碰撞时数字×2（在碰撞逻辑中实现）
 export function applyREffect(value: number): number {
   return value * 2;
 }
 
-// 应用A字母效果（最优移动推荐）
-export function suggestBestMove(
-  board: (TileValue | null)[][]
-): 'up' | 'down' | 'left' | 'right' | null {
-  // 简单策略：优先向角落移动
-  // 实际项目中可以使用Minimax或Monte Carlo算法
-  
-  // 检查右下角是否有最大值
-  const maxValue = getMaxValue(board);
-  const bottomRight = board[GRID_SIZE - 1][GRID_SIZE - 1];
-  
-  if (typeof bottomRight === 'number' && bottomRight === maxValue) {
-    // 优先向下和向右移动
-    return 'down';
+// A字母效果：消除所有小于32的方块，随机生成8个32的方块
+export function applyAEffect(board: (TileValue | null)[][]): (TileValue | null)[][] {
+  const newBoard: (TileValue | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+
+  // 保留所有 >= 32 的方块
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      const cell = board[row][col];
+      if (typeof cell === 'number' && cell >= 32) {
+        newBoard[row][col] = cell;
+      }
+    }
   }
-  
-  // 否则尝试将最大值移向右下角
-  return 'right';
+
+  // 找出所有空位置
+  const emptyPositions: [number, number][] = [];
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      if (newBoard[row][col] === null) {
+        emptyPositions.push([row, col]);
+      }
+    }
+  }
+
+  // 随机选择最多8个位置生成32
+  const count = Math.min(8, emptyPositions.length);
+  for (let i = 0; i < count; i++) {
+    const randomIndex = Math.floor(Math.random() * emptyPositions.length);
+    const [row, col] = emptyPositions.splice(randomIndex, 1)[0];
+    newBoard[row][col] = 32;
+  }
+
+  return newBoard;
+}
+
+// E字母效果：保留最大数字×4，清除其他所有数字
+export function applyEEffect(board: (TileValue | null)[][]): (TileValue | null)[][] {
+  const newBoard: (TileValue | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+
+  // 找到最大数字及其位置
+  let maxValue = 0;
+  let maxPosition: [number, number] | null = null;
+
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      const cell = board[row][col];
+      if (typeof cell === 'number' && cell > maxValue) {
+        maxValue = cell;
+        maxPosition = [row, col];
+      }
+    }
+  }
+
+  // 如果找到最大值，将其×4并放在原位置
+  if (maxPosition !== null) {
+    const [row, col] = maxPosition;
+    newBoard[row][col] = maxValue * 4;
+  }
+
+  return newBoard;
+}
+
+// 彩蛋效果1
+export function applySpecialEffect1(board: (TileValue | null)[][]): (TileValue | null)[][] {
+  const newBoard: (TileValue | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+
+  // 找到最大数字
+  let maxValue = 0;
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      const cell = board[row][col];
+      if (typeof cell === 'number' && cell > maxValue) {
+        maxValue = cell;
+      }
+    }
+  }
+
+  // 如果最大值 < 1024，生成一个 1024
+  const targetValue = maxValue < 1024 ? 1024 : maxValue;
+
+  // 保留所有 >= targetValue 的方块
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      const cell = board[row][col];
+      if (typeof cell === 'number' && cell >= targetValue) {
+        newBoard[row][col] = cell;
+      }
+    }
+  }
+
+  // 如果没有 1024 方块，添加一个
+  if (maxValue < 1024) {
+    const emptyPositions: [number, number][] = [];
+    for (let row = 0; row < GRID_SIZE; row++) {
+      for (let col = 0; col < GRID_SIZE; col++) {
+        if (newBoard[row][col] === null) {
+          emptyPositions.push([row, col]);
+        }
+      }
+    }
+    if (emptyPositions.length > 0) {
+      const [row, col] = emptyPositions[0];
+      newBoard[row][col] = 1024;
+    }
+  }
+
+  return newBoard;
+}
+
+// 彩蛋效果2
+export function applySpecialEffect2(board: (TileValue | null)[][]): (TileValue | null)[][] {
+  const newBoard: (TileValue | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+
+  // 找到最大数字及其位置
+  let maxValue = 0;
+  let maxPosition: [number, number] | null = null;
+
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      const cell = board[row][col];
+      if (typeof cell === 'number' && cell > maxValue) {
+        maxValue = cell;
+        maxPosition = [row, col];
+      }
+    }
+  }
+
+  // 如果最大值 < 8192，将最大值变为 8192
+  if (maxValue < 8192 && maxPosition !== null) {
+    const [row, col] = maxPosition;
+    newBoard[row][col] = 8192;
+  } else if (maxPosition !== null) {
+    // 保留原最大值
+    const [row, col] = maxPosition;
+    newBoard[row][col] = maxValue;
+  }
+
+  return newBoard;
 }
 
 // 获取棋盘最大数值
@@ -112,6 +278,8 @@ export function getLetterClassName(letter: Letter): string {
     R: 'letter-r bg-gradient-to-br from-trae-red to-red-400',
     A: 'letter-a bg-gradient-to-br from-trae-green to-green-400',
     E: 'letter-e bg-gradient-to-br from-trae-purple to-purple-400',
+    N: 'letter-n bg-gradient-to-br from-trae-green to-green-400',
+    B: 'letter-b bg-gradient-to-br from-trae-green to-green-400',
   };
   
   return `${baseClass} ${letterClasses[letter]}`;
