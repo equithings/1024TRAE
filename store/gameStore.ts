@@ -62,6 +62,7 @@ interface GameStore {
 }
 
 const BEST_SCORE_KEY = 'trae-1024-best-score';
+const GAME_STATE_KEY = 'trae-1024-game-state';
 
 // 从localStorage读取最高分
 const loadBestScore = (): number => {
@@ -74,6 +75,53 @@ const loadBestScore = (): number => {
 const saveBestScore = (score: number): void => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(BEST_SCORE_KEY, score.toString());
+};
+
+// 从localStorage加载游戏状态
+const loadGameState = (): Partial<GameStore> | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = localStorage.getItem(GAME_STATE_KEY);
+    if (!saved) return null;
+    return JSON.parse(saved);
+  } catch (error) {
+    console.error('Failed to load game state:', error);
+    return null;
+  }
+};
+
+// 保存游戏状态到localStorage
+const saveGameState = (state: GameStore): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const stateToSave = {
+      board: state.board,
+      score: state.score,
+      collectedLetters: state.collectedLetters,
+      isGameOver: state.isGameOver,
+      isVictory: state.isVictory,
+      showVictoryDialog: state.showVictoryDialog,
+      continueAfterVictory: state.continueAfterVictory,
+      moveCount: state.moveCount,
+      startTime: state.startTime,
+      minTileValue: state.minTileValue,
+      isEasterEgg1024: state.isEasterEgg1024,
+      showPreview: state.showPreview,
+      previewValue: state.previewValue,
+      undoAvailable: state.undoAvailable,
+      canUndo: state.canUndo,
+      history: state.history,
+    };
+    localStorage.setItem(GAME_STATE_KEY, JSON.stringify(stateToSave));
+  } catch (error) {
+    console.error('Failed to save game state:', error);
+  }
+};
+
+// 清除游戏状态
+const clearGameState = (): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(GAME_STATE_KEY);
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -99,28 +147,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // 初始化游戏
   initGame: () => {
-    const board = initializeBoard();
     const savedBestScore = loadBestScore(); // 客户端加载最高分
+    const savedGameState = loadGameState(); // 加载保存的游戏状态
 
-    set({
-      board,
-      score: 0,
-      bestScore: savedBestScore, // 使用加载的最高分
-      collectedLetters: [],
-      isGameOver: false,
-      isVictory: false,
-      showVictoryDialog: false,
-      continueAfterVictory: false,
-      canUndo: false,
-      moveCount: 0,
-      startTime: Date.now(),
-      minTileValue: 4,
-      showPreview: false,
-      previewValue: null,
-      undoAvailable: false,
-      history: [],
-      mergedPosition: null,
-    });
+    // 如果有保存的游戏状态，恢复它；否则创建新游戏
+    if (savedGameState && savedGameState.board) {
+      set({
+        ...savedGameState,
+        bestScore: savedBestScore, // 使用加载的最高分
+        mergedPosition: null, // 不恢复动画状态
+      });
+    } else {
+      const board = initializeBoard();
+      set({
+        board,
+        score: 0,
+        bestScore: savedBestScore,
+        collectedLetters: [],
+        isGameOver: false,
+        isVictory: false,
+        showVictoryDialog: false,
+        continueAfterVictory: false,
+        canUndo: false,
+        moveCount: 0,
+        startTime: Date.now(),
+        minTileValue: 4,
+        showPreview: false,
+        previewValue: null,
+        undoAvailable: false,
+        history: [],
+        mergedPosition: null,
+        isEasterEgg1024: false,
+      });
+    }
   },
 
   // 移动
@@ -232,7 +291,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       saveBestScore(newBestScore);
     }
 
-    set({
+    const newState = {
       board: newBoard,
       score: newScore,
       bestScore: newBestScore,
@@ -248,7 +307,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       undoAvailable: undoAvailableFlag,
       history: [...state.history, currentState].slice(-10), // 保留最近10步
       mergedPosition: mergedPosition, // 设置合并位置
-    });
+    };
+
+    set(newState);
+    
+    // 保存游戏状态到localStorage
+    saveGameState(get());
     
     // 200ms 后清除合并位置，结束动画
     if (mergedPosition !== null) {
@@ -274,11 +338,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
       canUndo: false,
       undoAvailable: false,
     });
+    
+    // 保存游戏状态到localStorage
+    saveGameState(get());
   },
 
   // 重新开始
   restart: () => {
-    get().initGame();
+    // 清除保存的游戏状态
+    clearGameState();
+    // 初始化新游戏
+    const board = initializeBoard();
+    const savedBestScore = loadBestScore();
+    
+    set({
+      board,
+      score: 0,
+      bestScore: savedBestScore,
+      collectedLetters: [],
+      isGameOver: false,
+      isVictory: false,
+      showVictoryDialog: false,
+      continueAfterVictory: false,
+      canUndo: false,
+      moveCount: 0,
+      startTime: Date.now(),
+      minTileValue: 4,
+      showPreview: false,
+      previewValue: null,
+      undoAvailable: false,
+      history: [],
+      mergedPosition: null,
+      isEasterEgg1024: false,
+    });
   },
 
   // 设置最高分
@@ -293,6 +385,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       showVictoryDialog: false,
       continueAfterVictory: true,
     });
+    
+    // 保存游戏状态到localStorage
+    saveGameState(get());
   },
 
   // 结束游戏（如果满足通关条件则提交排行榜）
@@ -316,5 +411,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isVictory: meetsVictoryCondition || isEasterEgg, // 彩蛋也算胜利
       isEasterEgg1024: isEasterEgg, // 标记彩蛋状态
     });
+    
+    // 保存游戏状态到localStorage
+    saveGameState(get());
   },
 }));

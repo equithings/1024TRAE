@@ -1,11 +1,17 @@
 // 音效播放工具
 
 // 音效文件路径（暂时所有音效都使用同一个文件）
+// 使用相对路径以适配 GitHub Pages 的 basePath
+const getBasePath = () => {
+  if (typeof window === 'undefined') return '';
+  return process.env.NODE_ENV === 'production' ? '/1024TRAE' : '';
+};
+
 const SOUNDS = {
-  merge: '/sounds/foldedAreas.mp3',
-  move: '/sounds/foldedAreas.mp3',
-  collect: '/sounds/foldedAreas.mp3',
-  victory: '/sounds/foldedAreas.mp3',
+  merge: `${getBasePath()}/sounds/foldedAreas.mp3`,
+  move: `${getBasePath()}/sounds/foldedAreas.mp3`,
+  collect: `${getBasePath()}/sounds/foldedAreas.mp3`,
+  victory: `${getBasePath()}/sounds/foldedAreas.mp3`,
 } as const;
 
 // 音频池，每个音效准备3个实例避免卡顿
