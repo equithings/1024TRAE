@@ -35,16 +35,16 @@ export const letterEffects: Record<Letter, LetterEffect> = {
   },
   N: {
     letter: 'N',
-    name: '???',
-    description: '???',
-    color: '#34C759',
+    name: 'Next (下一步)',
+    description: '保留≥1024的方块，新方块从128起',
+    color: '#FF9500',
     execute: applySpecialEffect1,
   },
   B: {
     letter: 'B',
-    name: '???',
-    description: '???',
-    color: '#34C759',
+    name: 'Boost (提升)',
+    description: '最大值变为8192，新方块从512起',
+    color: '#AF52DE',
     execute: applySpecialEffect2,
   },
 };

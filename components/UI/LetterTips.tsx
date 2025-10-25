@@ -47,6 +47,12 @@ export default function LetterTips() {
               {/* TRAE 字母 */}
               {mainLetters.map((letter) => {
                 const effect = letterEffects[letter];
+                const probabilities: Record<string, string> = {
+                  T: '10%',
+                  R: '5%',
+                  A: '3%',
+                  E: '1%',
+                };
                 return (
                   <div
                     key={letter}
@@ -62,8 +68,13 @@ export default function LetterTips() {
 
                     {/* 效果说明 */}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-800 text-sm mb-1">
-                        {effect.name}
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="font-semibold text-gray-800 text-sm">
+                          {effect.name}
+                        </div>
+                        <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                          {probabilities[letter]}
+                        </span>
                       </div>
                       <div className="text-xs text-gray-600 leading-relaxed">
                         {effect.description}
@@ -73,29 +84,38 @@ export default function LetterTips() {
                 );
               })}
 
-              {/* NB 彩蛋字母（显示为 ?） */}
+              {/* NB 彩蛋字母 */}
               {easterEggLetters.map((letter) => {
                 const effect = letterEffects[letter];
+                const probability = letter === 'N' ? '0.2%' : '0.05%';
                 return (
                   <div
                     key={letter}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-gray-50 to-white border border-gray-200 opacity-75"
+                    className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-50 to-white border-2 border-amber-200"
                   >
-                    {/* 字母图标显示为 ? */}
+                    {/* 字母图标 */}
                     <div
-                      className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md"
+                      className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md ring-2 ring-amber-300"
                       style={{ backgroundColor: effect.color }}
                     >
-                      ?
+                      {letter}
                     </div>
 
                     {/* 效果说明 */}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-800 text-sm mb-1">
-                        {effect.name}
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="font-semibold text-gray-800 text-sm">
+                          {effect.name}
+                        </div>
+                        <span className="text-xs px-2 py-0.5 bg-amber-200 text-amber-800 rounded-full font-medium">
+                          {probability}
+                        </span>
                       </div>
                       <div className="text-xs text-gray-600 leading-relaxed">
                         {effect.description}
+                      </div>
+                      <div className="text-xs text-amber-700 mt-1 italic">
+                        🎁 收集TRAE后随机出现
                       </div>
                     </div>
                   </div>

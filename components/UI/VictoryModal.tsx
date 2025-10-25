@@ -57,7 +57,7 @@ export default function VictoryModal({
         : {
             playerName: playerName.trim(),
             score,
-            maxTile: 1024,
+            maxTile: score, // 使用实际的最大方块值
             lettersCollected: collectedLetters,
             isVictory: true,
             playTime: moveCount,

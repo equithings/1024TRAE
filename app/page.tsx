@@ -8,11 +8,14 @@ import ScoreBoard from '@/components/UI/ScoreBoard';
 import VictoryModal from '@/components/UI/VictoryModal';
 import VictoryDialog from '@/components/UI/VictoryDialog';
 import LetterTips from '@/components/UI/LetterTips';
+import LetterNotification from '@/components/UI/LetterNotification';
+import EasterEgg1048576Modal from '@/components/UI/EasterEgg1048576Modal';
 import { useGameStore } from '@/store/gameStore';
 import { preloadSounds } from '@/lib/sounds';
+import { mountDevTools } from '@/lib/devTools';
 
 export default function Home() {
-  const { restart, endGame, isGameOver, isVictory, score, collectedLetters, moveCount, continueAfterVictory } = useGameStore();
+  const { restart, endGame, isGameOver, isVictory, score, collectedLetters, moveCount, continueAfterVictory, showEasterEgg1048576Modal } = useGameStore();
   const [showVictoryModal, setShowVictoryModal] = useState(false);
 
   // 监听胜利状态，只有在游戏结束时才显示提交弹窗
@@ -25,13 +28,20 @@ export default function Home() {
     }
   }, [isVictory, isGameOver, continueAfterVictory]);
 
-  // 预加载音效
+  // 预加载音效 & 挂载开发工具（仅开发环境）
   useEffect(() => {
     preloadSounds();
+    // 🔒 只在开发环境挂载开发工具
+    if (process.env.NODE_ENV === 'development') {
+      mountDevTools();
+    }
   }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#FAF8EF] to-[#F0EDE4] flex items-center justify-center p-2 sm:p-4">
+      {/* 字母生成通知 */}
+      <LetterNotification />
+
       <div className="max-w-5xl w-full space-y-3 sm:space-y-6">
         {/* Header */}
         <div className="text-center">
@@ -116,6 +126,9 @@ export default function Home() {
           collectedLetters={collectedLetters}
           onClose={() => setShowVictoryModal(false)}
         />
+
+        {/* 1024×1024 彩蛋提交面板 */}
+        <EasterEgg1048576Modal isVisible={showEasterEgg1048576Modal} />
 
         {/* 失败提示 - 只在未达成胜利条件且未选择继续游戏时显示 */}
         {isGameOver && !isVictory && !continueAfterVictory && (

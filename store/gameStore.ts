@@ -40,6 +40,12 @@ interface GameStore {
   startTime: number;
   minTileValue: number; // 最小方块值（N/B字母效果）
   isEasterEgg1024: boolean; // 1024×1024 隐藏彩蛋标记
+  movesSinceLastLetter: number; // 自上次出现字母后的移动次数（用于保底机制）
+
+  // 1024×1024 彩蛋按键序列状态
+  firstTime1048576Achieved: boolean; // 是否首次达到 1048576
+  easterEggKeySequence: Direction[]; // 彩蛋按键序列记录
+  showEasterEgg1048576Modal: boolean; // 是否显示 1048576 彩蛋提交面板
 
   // 字母效果状态
   showPreview: boolean; // T字母效果
@@ -48,9 +54,10 @@ interface GameStore {
 
   // 合并动画状态
   mergedPosition: { row: number; col: number } | null;
-  
+
   // 字母触发动画状态
   letterEffectTriggered: boolean; // 是否触发字母效果动画
+  lastGeneratedLetter: Letter | null; // 最后生成的字母（用于提示）
 
   // 历史记录
   history: GameHistory[];
@@ -110,6 +117,7 @@ const saveGameState = (state: GameStore): void => {
       startTime: state.startTime,
       minTileValue: state.minTileValue,
       isEasterEgg1024: state.isEasterEgg1024,
+      // 不保存 movesSinceLastLetter 和 lastGeneratedLetter（每次会话重新计数）
       showPreview: state.showPreview,
       previewValue: state.previewValue,
       undoAvailable: state.undoAvailable,
@@ -144,12 +152,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   startTime: Date.now(),
   minTileValue: 4,
   isEasterEgg1024: false,
+  movesSinceLastLetter: 0,
+  firstTime1048576Achieved: false,
+  easterEggKeySequence: [],
+  showEasterEgg1048576Modal: false,
   showPreview: false,
   previewValue: null,
   undoAvailable: false,
   history: [],
   mergedPosition: null,
   letterEffectTriggered: false,
+  lastGeneratedLetter: null,
 
   // 初始化游戏
   initGame: () => {
@@ -181,6 +194,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         mergedPosition: null,
         isEasterEgg1024: false,
         letterEffectTriggered: false,
+        movesSinceLastLetter: 0,
+        lastGeneratedLetter: null,
+        firstTime1048576Achieved: false,
+        easterEggKeySequence: [],
+        showEasterEgg1048576Modal: false,
       });
       return;
     }
@@ -192,6 +210,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         bestScore: savedBestScore, // 使用加载的最高分
         mergedPosition: null, // 不恢复动画状态
         letterEffectTriggered: false, // 不恢复动画状态
+        movesSinceLastLetter: 0, // 重置字母计数器（不跨会话保留）
+        lastGeneratedLetter: null, // 清除上次生成的字母提示
+        firstTime1048576Achieved: false, // 不跨会话保留
+        easterEggKeySequence: [], // 不跨会话保留
+        showEasterEgg1048576Modal: false, // 不跨会话保留
       });
     } else {
       const board = initializeBoard();
@@ -215,6 +238,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         mergedPosition: null,
         isEasterEgg1024: false,
         letterEffectTriggered: false,
+        movesSinceLastLetter: 0,
+        lastGeneratedLetter: null,
+        firstTime1048576Achieved: false,
+        easterEggKeySequence: [],
+        showEasterEgg1048576Modal: false,
       });
     }
   },
@@ -317,8 +345,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
 
-    // 添加随机方块
-    addRandomTile(newBoard, newCollectedLetters, newMinTileValue);
+    // 添加随机方块（带保底机制）
+    const { success: tileAdded, letterGenerated } = addRandomTile(
+      newBoard,
+      newCollectedLetters,
+      newMinTileValue,
+      state.movesSinceLastLetter + 1
+    );
+
+    // 如果生成了字母，重置计数器；否则递增
+    const newMovesSinceLastLetter = letterGenerated !== null ? 0 : state.movesSinceLastLetter + 1;
 
     // 计算当前最大数字作为分数
     const newScore = getMaxTile(newBoard);
@@ -336,6 +372,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // 检查失败条件
     const gameOver = !canMove(newBoard);
+
+    // === 🎁 1024×1024 彩蛋按键序列检测 ===
+    let newFirstTime1048576Achieved = state.firstTime1048576Achieved;
+    let newEasterEggKeySequence = [...state.easterEggKeySequence];
+    let showEasterEgg1048576Modal = false;
+
+    // 检测是否首次达到 1048576
+    if (!state.firstTime1048576Achieved && newScore === 1024 * 1024) {
+      newFirstTime1048576Achieved = true;
+    }
+
+    // 如果已经达到 1048576，开始记录按键序列
+    if (newFirstTime1048576Achieved && !state.showEasterEgg1048576Modal) {
+      // 添加当前方向到序列
+      newEasterEggKeySequence.push(direction);
+
+      // 保持序列最多 4 个按键
+      if (newEasterEggKeySequence.length > 4) {
+        newEasterEggKeySequence.shift();
+      }
+
+      // 检查序列是否为：上、下、左、右
+      const targetSequence: Direction[] = ['up', 'down', 'left', 'right'];
+      const sequenceMatched = newEasterEggKeySequence.length === 4 &&
+        newEasterEggKeySequence.every((dir, index) => dir === targetSequence[index]);
+
+      // 如果序列匹配且游戏没有失败，触发彩蛋
+      if (sequenceMatched && !gameOver) {
+        showEasterEgg1048576Modal = true;
+        playSound('collect', 0.6); // 播放彩蛋触发音效
+        vibrate(VibrationPatterns.letterCollect); // 震动反馈
+      }
+    }
 
     // 保存最高分
     if (newBestScore > state.bestScore) {
@@ -360,6 +429,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mergedPosition: mergedPosition, // 设置合并位置
       letterEffectTriggered: letterEffectTriggered, // 设置字母效果触发状态
       isEasterEgg1024: isEasterEgg, // 标记彩蛋状态
+      movesSinceLastLetter: newMovesSinceLastLetter, // 更新计数器
+      lastGeneratedLetter: letterGenerated, // 记录生成的字母
+      firstTime1048576Achieved: newFirstTime1048576Achieved, // 1048576 彩蛋状态
+      easterEggKeySequence: newEasterEggKeySequence, // 按键序列
+      showEasterEgg1048576Modal: showEasterEgg1048576Modal, // 彩蛋提交面板显示状态
     };
 
     set(newState);
@@ -379,6 +453,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       setTimeout(() => {
         set({ letterEffectTriggered: false });
       }, 300);
+    }
+
+    // 如果生成了字母，3秒后清除提示
+    if (letterGenerated !== null) {
+      setTimeout(() => {
+        set({ lastGeneratedLetter: null });
+      }, 3000);
     }
   },
 
@@ -410,7 +491,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 初始化新游戏
     const board = initializeBoard();
     const savedBestScore = loadBestScore();
-    
+
     set({
       board,
       score: 0,
@@ -430,6 +511,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       history: [],
       mergedPosition: null,
       isEasterEgg1024: false,
+      movesSinceLastLetter: 0,
+      lastGeneratedLetter: null,
+      firstTime1048576Achieved: false,
+      easterEggKeySequence: [],
+      showEasterEgg1048576Modal: false,
     });
   },
 

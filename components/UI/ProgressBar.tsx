@@ -8,7 +8,8 @@ import { getNextLetter } from '@/lib/letter-system';
 
 export default function ProgressBar() {
   const { collectedLetters } = useGameStore();
-  const letters: Letter[] = ['T', 'R', 'A', 'E'];
+  const mainLetters: Letter[] = ['T', 'R', 'A', 'E'];
+  const bonusLetters: Letter[] = ['N', 'B'];
   const nextLetter = getNextLetter(collectedLetters);
 
   const letterColors: Record<Letter, string> = {
@@ -16,15 +17,16 @@ export default function ProgressBar() {
     R: 'from-trae-red to-red-400',
     A: 'from-trae-green to-green-400',
     E: 'from-trae-purple to-purple-400',
-    N: 'from-trae-green to-green-400',
-    B: 'from-trae-green to-green-400',
+    N: 'from-orange-500 to-orange-400',
+    B: 'from-purple-600 to-purple-500',
   };
 
   return (
     <div className="flex items-center gap-4 bg-white rounded-lg p-4 shadow-md">
       <span className="text-sm font-semibold text-gray-600">收集进度:</span>
       <div className="flex gap-2">
-        {letters.map((letter) => {
+        {/* TRAE主字母 */}
+        {mainLetters.map((letter) => {
           const isCollected = collectedLetters.includes(letter);
           const isNext = letter === nextLetter;
           const gradient = letterColors[letter];
@@ -45,10 +47,37 @@ export default function ProgressBar() {
                 }
               `}
             >
-              {isCollected ? letter : letter}
+              {letter}
             </div>
           );
         })}
+
+        {/* NB奖励字母（始终显示） */}
+        <>
+          <div className="w-px h-10 bg-gray-300 mx-1" />
+          {bonusLetters.map((letter) => {
+            const isCollected = collectedLetters.includes(letter);
+            const gradient = letterColors[letter];
+
+            return (
+              <div
+                key={letter}
+                className={`
+                  w-12 h-12 rounded-lg flex items-center justify-center
+                  text-white font-bold text-xl font-mono
+                  transition-all duration-300
+                  ${
+                    isCollected
+                      ? `bg-gradient-to-br ${gradient} scale-100 ring-2 ring-yellow-400 ring-offset-2`
+                      : 'bg-gray-200 scale-90 opacity-40'
+                  }
+                `}
+              >
+                {letter}
+              </div>
+            );
+          })}
+        </>
       </div>
       <div className="flex-1" />
       <div className="text-right">

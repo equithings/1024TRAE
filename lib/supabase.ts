@@ -42,45 +42,43 @@ export async function submitScore(data: {
       }
       // 跳过后续验证，直接进入插入逻辑
     } else {
-      // 2. 验证分数合理性（5x5棋盘最大可能分数约为8192）
-      if (data.score < 0 || data.score > 10000) {
-        return { success: false, error: '分数异常，请勿作弊' };
+      // 2. 防作弊拦截：步数超过 100000 或 分数超过 10240x1024
+      if (data.playTime > 100000) {
+        return { success: false, error: 'Too many moves' };
       }
 
-      // 3. 验证最大方块必须是2的幂
-      const validTiles = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192];
-      if (!validTiles.includes(data.maxTile)) {
-        return { success: false, error: '最大方块数值异常' };
+      if (data.score > 10240 * 1024) {
+        return { success: false, error: 'Score too high' };
       }
 
-      // 4. 验证胜利条件
+      // 3. 验证胜利条件（只在标记为胜利时验证）
       if (data.isVictory) {
-        // 必须收集完整TRAE字母
-        if (!data.lettersCollected || data.lettersCollected.length !== 4) {
-          return { success: false, error: '字母收集不完整' };
+        // 必须收集完整 TRAE 字母（可以额外有 N 或 B）
+        if (!data.lettersCollected || data.lettersCollected.length < 4) {
+          return { success: false, error: 'Letters incomplete' };
         }
 
-        // 必须按顺序收集
+        // 必须按顺序收集（前4个字母必须是 T R A E 后面可以有 N 或 B）
         const expectedSequence = ['T', 'R', 'A', 'E'];
         for (let i = 0; i < 4; i++) {
           if (data.lettersCollected[i] !== expectedSequence[i]) {
-            return { success: false, error: '字母顺序错误' };
+            return { success: false, error: 'Letter order error' };
           }
         }
 
-        // 必须达成1024
-        if (data.maxTile !== 1024) {
-          return { success: false, error: '未达成1024方块' };
+        // 必须达成 1024 或更高
+        if (data.maxTile < 1024) {
+          return { success: false, error: 'Need 1024 tile' };
         }
-      }
 
-      // 5. 验证移动次数合理性（最少需要10步才能完成）
-      if (data.isVictory && data.playTime < 10) {
-        return { success: false, error: '移动次数过少，数据异常' };
+        // 验证移动次数合理性（最少需要10步才能完成）
+        if (data.playTime < 10) {
+          return { success: false, error: 'Moves too few' };
+        }
       }
     }
 
-    // 6. 限制提交频率（本地存储，10秒内不能重复提交）
+    // 4. 限制提交频率（本地存储，10秒内不能重复提交）
     if (typeof window !== 'undefined') {
       const lastSubmitTime = localStorage.getItem('trae_last_submit_time');
       if (lastSubmitTime) {

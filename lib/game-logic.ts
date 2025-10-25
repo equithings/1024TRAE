@@ -12,8 +12,8 @@ export function createEmptyBoard(): (TileValue | null)[][] {
 // 初始化游戏棋盘（包含2个初始方块）
 export function initializeBoard(): (TileValue | null)[][] {
   const board = createEmptyBoard();
-  addRandomTile(board, []);
-  addRandomTile(board, []);
+  addRandomTile(board, [], 4, 0);
+  addRandomTile(board, [], 4, 0);
   return board;
 }
 
@@ -68,14 +68,15 @@ function getAdjacentEmptyPositions(
   return adjacentPositions;
 }
 
-// 添加随机方块
+// 添加随机方块（带保底机制）
 export function addRandomTile(
   board: (TileValue | null)[][],
   collectedLetters: Letter[],
-  minTileValue: number = 4
-): boolean {
+  minTileValue: number = 4,
+  movesSinceLastLetter: number = 0
+): { success: boolean; letterGenerated: Letter | null } {
   const emptyPositions = getEmptyPositions(board);
-  if (emptyPositions.length === 0) return false;
+  if (emptyPositions.length === 0) return { success: false, letterGenerated: null };
 
   // 生成逻辑
   const rand = Math.random();
@@ -85,70 +86,81 @@ export function addRandomTile(
     typeof v === 'string' && ['T', 'R', 'A', 'E', 'N', 'B'].includes(v)
   ).length;
 
-  // 彩蛋字母生成逻辑（只在收集完 TRAE 之后，且每个字母只出现 1 次）
+  // 保底机制阈值（步数）
+  const guaranteedThresholds: Record<number, number> = {
+    0: 20,   // T 字母保底 20 步
+    1: 40,   // R 字母保底 40 步
+    2: 60,   // A 字母保底 60 步
+    3: 120,  // E 字母保底 120 步
+  };
+
+  const guaranteedThresholdsEaster: Record<string, number> = {
+    'N': 512,   // N 字母保底 512 步
+    'B': 1024,  // B 字母保底 1024 步
+  };
+
+  // 【彩蛋字母生成逻辑】只在收集完 TRAE 之后，且每个字母只出现 1 次
   if (letterCount === 0 && collectedLetters.length >= 4) {
     const hasCollectedN = collectedLetters.includes('N');
     const hasCollectedB = collectedLetters.includes('B');
 
-    // B 字母：0.05% 概率，只出现 1 次（优先判断，因为概率更低）
-    if (!hasCollectedB && rand < 0.0005) {
+    // B 字母：保底 1024 步或 0.05% 概率
+    if (!hasCollectedB && (movesSinceLastLetter >= guaranteedThresholdsEaster['B'] || rand < 0.0005)) {
       const targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
       const [row, col] = targetPosition;
       board[row][col] = 'B';
-      return true;
+      return { success: true, letterGenerated: 'B' };
     }
 
-    // N 字母：0.2% 概率，只出现 1 次
-    // 使用区间 [0.0005, 0.0025) 来确保独立概率
-    if (!hasCollectedN && rand >= 0.0005 && rand < 0.0025) {
+    // N 字母：保底 512 步或 0.2% 概率
+    if (!hasCollectedN && (movesSinceLastLetter >= guaranteedThresholdsEaster['N'] || (rand >= 0.0005 && rand < 0.0025))) {
       const targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
       const [row, col] = targetPosition;
       board[row][col] = 'N';
-      return true;
+      return { success: true, letterGenerated: 'N' };
     }
   }
 
-  // 根据已收集字母数量决定概率：T=10%, R=5%, A=3%, E=1%
-  const letterProbabilities: Record<number, number> = {
-    0: 0.10,  // T 的概率 10%
-    1: 0.05,  // R 的概率 5%
-    2: 0.03,  // A 的概率 3% (从 4% 下调 1%)
-    3: 0.01,  // E 的概率 1% (从 2% 下调 1%)
-  };
-
-  const letterProbability = letterProbabilities[collectedLetters.length] || 0;
-
-  // 生成字母（如果还未集齐且棋盘上没有字母）
-  if (rand < letterProbability && collectedLetters.length < 4 && letterCount === 0) {
+  // 【TRAE 字母生成逻辑】保底机制 + 原有概率
+  if (collectedLetters.length < 4 && letterCount === 0) {
     const letterSequence: Letter[] = ['T', 'R', 'A', 'E'];
     const nextLetter = letterSequence[collectedLetters.length];
+    const threshold = guaranteedThresholds[collectedLetters.length];
 
-    let targetPosition: [number, number];
+    // 根据已收集字母数量决定概率：T=10%, R=5%, A=3%, E=1%
+    const letterProbabilities: Record<number, number> = {
+      0: 0.10,  // T 的概率 10%
+      1: 0.05,  // R 的概率 5%
+      2: 0.03,  // A 的概率 3%
+      3: 0.01,  // E 的概率 1%
+    };
+    const letterProbability = letterProbabilities[collectedLetters.length] || 0;
 
-    // R 字母特殊处理：优先生成在最大数字方块的左右
-    if (nextLetter === 'R') {
-      const maxPosition = getMaxTilePosition(board);
-      if (maxPosition !== null) {
-        const adjacentPositions = getAdjacentEmptyPositions(board, maxPosition);
-        if (adjacentPositions.length > 0) {
-          // 随机选择左或右
-          targetPosition = adjacentPositions[Math.floor(Math.random() * adjacentPositions.length)];
+    // 触发条件：达到保底步数 或 随机概率命中
+    if (movesSinceLastLetter >= threshold || rand < letterProbability) {
+      let targetPosition: [number, number];
+
+      // R 字母特殊处理：优先生成在最大数字方块的左右
+      if (nextLetter === 'R') {
+        const maxPosition = getMaxTilePosition(board);
+        if (maxPosition !== null) {
+          const adjacentPositions = getAdjacentEmptyPositions(board, maxPosition);
+          if (adjacentPositions.length > 0) {
+            targetPosition = adjacentPositions[Math.floor(Math.random() * adjacentPositions.length)];
+          } else {
+            targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
+          }
         } else {
-          // 如果左右都没有空位，则随机选择一个空位
           targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
         }
       } else {
-        // 如果没有找到最大值（理论上不应该发生），则随机选择
         targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
       }
-    } else {
-      // 其他字母随机选择空位
-      targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
-    }
 
-    const [row, col] = targetPosition;
-    board[row][col] = nextLetter;
-    return true;
+      const [row, col] = targetPosition;
+      board[row][col] = nextLetter;
+      return { success: true, letterGenerated: nextLetter };
+    }
   }
 
   // 根据最小方块值生成数字方块
@@ -163,7 +175,18 @@ export function addRandomTile(
     // 默认：70%生成4，30%生成8
     board[row][col] = rand < 0.7 ? 4 : 8;
   }
-  return true;
+  return { success: true, letterGenerated: null };
+}
+
+// 计算一行中数字的数量（不包括字母和null）
+function countNumbersInLine(line: (TileValue | null)[]): number {
+  let count = 0;
+  for (const cell of line) {
+    if (typeof cell === 'number') {
+      count++;
+    }
+  }
+  return count;
 }
 
 // 移动逻辑
@@ -187,16 +210,47 @@ export function move(
   // 根据方向旋转棋盘，统一向左移动
   newBoard = rotateBoard(newBoard, direction);
 
+  // 🔄 迭代式合并：对每一行持续移动/合并，直到稳定
   for (let row = 0; row < GRID_SIZE; row++) {
-    const { line, lineMoved, score, collisions, mergedCol } = moveLine(newBoard[row], collectedLetters);
-    if (lineMoved) moved = true;
-    mergedScore += score;
-    letterCollisions.push(...collisions);
-    newBoard[row] = line;
-    
-    // 记录合并位置（旋转前的坐标）
-    if (mergedCol !== null && mergedPosition === null) {
-      mergedPosition = { row, col: mergedCol };
+    // 检测当前行的数字数量
+    const numberCount = countNumbersInLine(newBoard[row]);
+
+    if (numberCount === 1) {
+      // ✅ 只有1个数字：只执行1次moveLine（避免一次性移动多格）
+      const { line, lineMoved, score, collisions, mergedCol } = moveLine(newBoard[row], collectedLetters);
+
+      if (lineMoved) {
+        moved = true;
+        mergedScore += score;
+        letterCollisions.push(...collisions);
+        newBoard[row] = line;
+
+        // 记录合并位置
+        if (mergedCol !== null) {
+          mergedPosition = { row, col: mergedCol };
+        }
+      }
+    } else {
+      // ✅ 多个数字：使用迭代式合并（保持"合并优先"机制）
+      let rowMoved = true;
+
+      // 持续移动当前行，直到无法再移动或合并
+      while (rowMoved) {
+        const { line, lineMoved, score, collisions, mergedCol } = moveLine(newBoard[row], collectedLetters);
+        rowMoved = lineMoved;
+
+        if (lineMoved) {
+          moved = true;
+          mergedScore += score;
+          letterCollisions.push(...collisions);
+          newBoard[row] = line;
+
+          // 记录合并位置（只记录最后一次合并）
+          if (mergedCol !== null) {
+            mergedPosition = { row, col: mergedCol };
+          }
+        }
+      }
     }
   }
 
