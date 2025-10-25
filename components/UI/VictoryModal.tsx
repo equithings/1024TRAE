@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { submitScore } from '@/lib/supabase';
-import { useGameStore } from '@/store/gameStore';
+import { useGameStore, markGameAsSubmitted } from '@/store/gameStore';
 
 interface VictoryModalProps {
   isVisible: boolean;
@@ -67,6 +67,8 @@ export default function VictoryModal({
 
       if (result.success) {
         setSubmitted(true);
+        // 标记游戏已提交榜单，下次启动时开始新游戏
+        markGameAsSubmitted();
       } else {
         setError(result.error || '提交失败，请重试');
       }

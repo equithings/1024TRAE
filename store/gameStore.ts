@@ -115,6 +115,7 @@ const saveGameState = (state: GameStore): void => {
       undoAvailable: state.undoAvailable,
       canUndo: state.canUndo,
       history: state.history,
+      hasSubmitted: false, // 默认未提交，只在实际提交时标记为 true
     };
     localStorage.setItem(GAME_STATE_KEY, JSON.stringify(stateToSave));
   } catch (error) {
@@ -155,7 +156,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const savedBestScore = loadBestScore(); // 客户端加载最高分
     const savedGameState = loadGameState(); // 加载保存的游戏状态
 
-    // 如果有保存的游戏状态，恢复它；否则创建新游戏
+    // 检查保存的游戏状态
+    // 如果已经提交过榜单，清除状态并开始新游戏
+    if (savedGameState && (savedGameState as any).hasSubmitted) {
+      clearGameState();
+      const board = initializeBoard();
+      set({
+        board,
+        score: 0,
+        bestScore: savedBestScore,
+        collectedLetters: [],
+        isGameOver: false,
+        isVictory: false,
+        showVictoryDialog: false,
+        continueAfterVictory: false,
+        canUndo: false,
+        moveCount: 0,
+        startTime: Date.now(),
+        minTileValue: 4,
+        showPreview: false,
+        previewValue: null,
+        undoAvailable: false,
+        history: [],
+        mergedPosition: null,
+        isEasterEgg1024: false,
+        letterEffectTriggered: false,
+      });
+      return;
+    }
+
+    // 如果有保存的游戏状态且未提交过，恢复它；否则创建新游戏
     if (savedGameState && savedGameState.board) {
       set({
         ...savedGameState,
@@ -438,3 +468,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     saveGameState(get());
   },
 }));
+
+// 导出标记游戏已提交的函数
+export const markGameAsSubmitted = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const saved = localStorage.getItem(GAME_STATE_KEY);
+    if (saved) {
+      const state = JSON.parse(saved);
+      state.hasSubmitted = true;
+      localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state));
+    }
+  } catch (error) {
+    console.error('Failed to mark game as submitted:', error);
+  }
+};
