@@ -373,13 +373,16 @@ export function checkVictory(
   board: (TileValue | null)[][],
   collectedLetters: Letter[]
 ): boolean {
-  const hasAllLetters = 
+  const hasAllLetters =
     collectedLetters.length === 4 &&
     collectedLetters.join('') === 'TRAE';
-  
-  const has1024 = board.flat().some(cell => cell === 1024);
-  
-  return hasAllLetters && has1024;
+
+  // 检查最大方块是否>=1024（而不是检查是否存在1024方块）
+  // 因为可能已经合成更大的方块（2048, 4096等）或触发E字母效果（×4）
+  const maxTile = getMaxTile(board);
+  const has1024OrMore = maxTile >= 1024;
+
+  return hasAllLetters && has1024OrMore;
 }
 
 // 获取最大方块值
