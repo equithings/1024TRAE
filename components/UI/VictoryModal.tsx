@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { submitScore } from '@/lib/supabase';
 import { useGameStore } from '@/store/gameStore';
 
@@ -212,12 +213,12 @@ export default function VictoryModal({
                   >
                     再来一局
                   </button>
-                  <a
+                  <Link
                     href="/leaderboard"
-                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-center"
+                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-center flex items-center justify-center"
                   >
                     查看排行榜
-                  </a>
+                  </Link>
                 </>
               )}
             </div>

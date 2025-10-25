@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { assetPath } from '@/lib/path';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -6,7 +7,7 @@ export const metadata: Metadata = {
   description: '收集TRAE字母，达成1024，成为真正的AI工程师！',
   keywords: 'TRAE, 1024, 游戏, 程序员节, AI工程师, 2048',
   icons: {
-    icon: '/favicon.svg',
+    icon: assetPath('/favicon.svg'),
   },
 };
 

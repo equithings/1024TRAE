@@ -11,6 +11,7 @@ interface TileProps {
   position: { row: number; col: number };
   isNew?: boolean; // 是否是新生成的方块
   isMerged?: boolean; // 是否刚刚合并过
+  isLetterEffectTriggered?: boolean; // 是否触发字母效果（全局动画）
 }
 
 // 获取数字方块的颜色类名
@@ -41,7 +42,7 @@ function getFontSize(value: TileValue): string {
   return 'text-5xl sm:text-6xl';
 }
 
-export default function Tile({ value, position, isNew = false, isMerged = false }: TileProps) {
+export default function Tile({ value, position, isNew = false, isMerged = false, isLetterEffectTriggered = false }: TileProps) {
   const isLetterTile = isLetter(value);
   
   const className = isLetterTile
@@ -50,11 +51,14 @@ export default function Tile({ value, position, isNew = false, isMerged = false 
   
   const fontSize = getFontSize(value);
 
+  // 字母效果触发时，所有数字方块都弹一下
+  const shouldBounce = isMerged || (isLetterEffectTriggered && !isLetterTile);
+
   return (
     <motion.div
       initial={{ scale: isNew ? 0 : 1 }}
       animate={{ 
-        scale: isMerged ? 1.05 : 1,
+        scale: shouldBounce ? 1.05 : 1,
       }}
       exit={{ scale: 0 }}
       transition={{ 
@@ -70,7 +74,7 @@ export default function Tile({ value, position, isNew = false, isMerged = false 
         shadow-lg
         ${isLetterTile ? 'bg-[#32F08C] ring-2 ring-offset-2 ring-white' : ''}
         ${isNew ? 'tile-new' : ''}
-        ${isMerged ? 'tile-merged' : ''}
+        ${shouldBounce ? 'tile-merged' : ''}
       `}
     >
       {/* 字母方块显示文字 */}

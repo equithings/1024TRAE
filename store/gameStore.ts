@@ -22,6 +22,7 @@ import {
   isLetter,
 } from '@/lib/letter-system';
 import { playSound, playSoundDebounced } from '@/lib/sounds';
+import { vibrate, VibrationPatterns } from '@/lib/vibration';
 import { TileValue, Letter, Direction, GameHistory } from '@/types/game';
 
 interface GameStore {
@@ -47,6 +48,9 @@ interface GameStore {
 
   // 合并动画状态
   mergedPosition: { row: number; col: number } | null;
+  
+  // 字母触发动画状态
+  letterEffectTriggered: boolean; // 是否触发字母效果动画
 
   // 历史记录
   history: GameHistory[];
@@ -144,6 +148,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   undoAvailable: false,
   history: [],
   mergedPosition: null,
+  letterEffectTriggered: false,
 
   // 初始化游戏
   initGame: () => {
@@ -156,6 +161,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ...savedGameState,
         bestScore: savedBestScore, // 使用加载的最高分
         mergedPosition: null, // 不恢复动画状态
+        letterEffectTriggered: false, // 不恢复动画状态
       });
     } else {
       const board = initializeBoard();
@@ -178,6 +184,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         history: [],
         mergedPosition: null,
         isEasterEgg1024: false,
+        letterEffectTriggered: false,
       });
     }
   },
@@ -213,6 +220,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let previewValueFlag = state.previewValue;
     let undoAvailableFlag = state.undoAvailable;
     let newMinTileValue = state.minTileValue;
+    let letterEffectTriggered = false; // 字母效果是否触发
 
     for (const collision of letterCollisions) {
       const { letter, value } = collision;
@@ -226,10 +234,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
           newBoard = applySpecialEffect1(newBoard);
           newMinTileValue = 128;
           playSound('collect', 0.4);
+          letterEffectTriggered = true; // 标记字母效果触发
+          vibrate(VibrationPatterns.letterCollect); // 触发震动
         } else if (letter === 'B') {
           newBoard = applySpecialEffect2(newBoard);
           newMinTileValue = 512;
           playSound('collect', 0.4);
+          letterEffectTriggered = true; // 标记字母效果触发
+          vibrate(VibrationPatterns.letterCollect); // 触发震动
         }
         continue;
       }
@@ -240,6 +252,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const result = collectLetter(letter, newCollectedLetters);
         if (result.collected) {
           newCollectedLetters = result.newCollectedLetters;
+          letterEffectTriggered = true; // 标记字母效果触发
+          vibrate(VibrationPatterns.letterCollect); // 触发震动
 
           // 应用字母效果
           switch (letter) {
@@ -307,6 +321,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       undoAvailable: undoAvailableFlag,
       history: [...state.history, currentState].slice(-10), // 保留最近10步
       mergedPosition: mergedPosition, // 设置合并位置
+      letterEffectTriggered: letterEffectTriggered, // 设置字母效果触发状态
     };
 
     set(newState);
@@ -319,6 +334,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       setTimeout(() => {
         set({ mergedPosition: null });
       }, 200);
+    }
+    
+    // 300ms 后清除字母效果触发状态，结束全局动画
+    if (letterEffectTriggered) {
+      setTimeout(() => {
+        set({ letterEffectTriggered: false });
+      }, 300);
     }
   },
 

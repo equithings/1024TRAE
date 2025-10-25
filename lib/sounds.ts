@@ -1,17 +1,14 @@
 // 音效播放工具
 
-// 音效文件路径（暂时所有音效都使用同一个文件）
-// 使用相对路径以适配 GitHub Pages 的 basePath
-const getBasePath = () => {
-  if (typeof window === 'undefined') return '';
-  return process.env.NODE_ENV === 'production' ? '/1024TRAE' : '';
-};
+import { assetPath } from './path';
 
+// 音效文件路径（暂时所有音效都使用同一个文件）
+// 使用 assetPath 函数以适配 GitHub Pages 的 basePath
 const SOUNDS = {
-  merge: `${getBasePath()}/sounds/foldedAreas.mp3`,
-  move: `${getBasePath()}/sounds/foldedAreas.mp3`,
-  collect: `${getBasePath()}/sounds/foldedAreas.mp3`,
-  victory: `${getBasePath()}/sounds/foldedAreas.mp3`,
+  merge: assetPath('/sounds/foldedAreas.mp3'),
+  move: assetPath('/sounds/foldedAreas.mp3'),
+  collect: assetPath('/sounds/foldedAreas.mp3'),
+  victory: assetPath('/sounds/foldedAreas.mp3'),
 } as const;
 
 // 音频池，每个音效准备3个实例避免卡顿

@@ -10,7 +10,7 @@ import MoveIndicator from './MoveIndicator';
 import { Direction } from '@/types/game';
 
 export default function GameBoard() {
-  const { board, move, initGame, mergedPosition } = useGameStore();
+  const { board, move, initGame, mergedPosition, letterEffectTriggered } = useGameStore();
   const [lastDirection, setLastDirection] = useState<Direction | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +102,7 @@ export default function GameBoard() {
                     mergedPosition.row === row &&
                     mergedPosition.col === col
                   }
+                  isLetterEffectTriggered={letterEffectTriggered}
                 />
               )}
             </div>
