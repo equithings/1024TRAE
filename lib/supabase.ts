@@ -142,7 +142,25 @@ export async function getLeaderboard(
       return { data: [], error: error.message };
     }
 
-    return { data: data || [] };
+    // 客户端排序：将彩蛋玩家（TRAENB4EVER）置顶
+    const sortedData = (data || []).sort((a, b) => {
+      const isAEasterEgg = a.letters_collected.length === 1 && a.letters_collected[0] === 'TRAENB4EVER';
+      const isBEasterEgg = b.letters_collected.length === 1 && b.letters_collected[0] === 'TRAENB4EVER';
+      
+      // 彩蛋玩家排在最前面
+      if (isAEasterEgg && !isBEasterEgg) return -1;
+      if (!isAEasterEgg && isBEasterEgg) return 1;
+      
+      // 如果都是彩蛋玩家，按提交时间排序（早提交的在前）
+      if (isAEasterEgg && isBEasterEgg) {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      
+      // 非彩蛋玩家保持原有排序（已经按 max_tile, play_time, created_at 排序）
+      return 0;
+    });
+
+    return { data: sortedData };
   } catch (err) {
     console.error('Unexpected error:', err);
     return { data: [], error: 'Unexpected error occurred' };

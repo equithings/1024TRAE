@@ -89,80 +89,99 @@ export default function RankTable() {
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry, index) => (
-              <tr
-                key={entry.id}
-                className={`
-                  border-b border-gray-200 hover:bg-gray-50 transition-colors
-                  ${index < 3 ? 'bg-yellow-50' : ''}
-                `}
-              >
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    {index === 0 && <span className="text-2xl mr-2">🥇</span>}
-                    {index === 1 && <span className="text-2xl mr-2">🥈</span>}
-                    {index === 2 && <span className="text-2xl mr-2">🥉</span>}
-                    <span className="font-semibold text-gray-700">
-                      #{index + 1}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="font-medium text-gray-800">
-                    {entry.player_name}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <span className="text-lg font-bold text-emerald-600">
-                    {entry.play_time} 步
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span
-                    className={`
-                      inline-block px-3 py-1 rounded-full text-sm font-semibold
-                      ${
-                        entry.max_tile >= 1024
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : entry.max_tile >= 512
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }
-                    `}
-                  >
-                    {entry.max_tile >= 1024
-                      ? `${(entry.max_tile / 1024).toFixed(3).replace(/\.?0+$/, '')}×1024`
-                      : entry.max_tile}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  {/* 检测彩蛋字母：TRAENB4EVER */}
-                  {entry.letters_collected.length === 1 &&
-                   entry.letters_collected[0] === 'TRAENB4EVER' ? (
-                    <span className="inline-block px-3 py-1 bg-gradient-to-r from-yellow-400 via-red-400 to-purple-500 text-white rounded-full text-xs font-bold animate-pulse">
-                      🎁 TRAENB4EVER
-                    </span>
-                  ) : (
-                    <div className="flex justify-center gap-1">
-                      {entry.letters_collected.map((letter, i) => (
-                        <span
-                          key={i}
-                          className="inline-block w-6 h-6 bg-trae-blue text-white rounded text-xs font-bold flex items-center justify-center"
-                        >
-                          {letter}
-                        </span>
-                      ))}
-                      {entry.letters_collected.length === 0 && (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
+            {entries.map((entry, index) => {
+              // 检测是否为彩蛋玩家
+              const isEasterEgg = entry.letters_collected.length === 1 && 
+                                  entry.letters_collected[0] === 'TRAENB4EVER';
+              
+              return (
+                <tr
+                  key={entry.id}
+                  className={`
+                    border-b border-gray-200 hover:bg-gray-50 transition-colors
+                    ${index < 3 ? 'bg-yellow-50' : ''}
+                    ${isEasterEgg ? 'bg-gradient-to-r from-yellow-100 via-pink-100 to-purple-100' : ''}
+                  `}
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      {isEasterEgg && <span className="text-2xl mr-2">👑</span>}
+                      {!isEasterEgg && index === 0 && <span className="text-2xl mr-2">🥇</span>}
+                      {!isEasterEgg && index === 1 && <span className="text-2xl mr-2">🥈</span>}
+                      {!isEasterEgg && index === 2 && <span className="text-2xl mr-2">🥉</span>}
+                      <span className="font-semibold text-gray-700">
+                        #{index + 1}
+                      </span>
                     </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-500">
-                  {new Date(entry.created_at).toLocaleDateString('zh-CN')}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`font-medium ${
+                      isEasterEgg ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 via-red-600 to-purple-600 font-bold' : 'text-gray-800'
+                    }`}>
+                      {entry.player_name}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {isEasterEgg ? (
+                      <span className="text-lg font-bold text-purple-600">
+                        🎁 ???
+                      </span>
+                    ) : (
+                      <span className="text-lg font-bold text-emerald-600">
+                        {entry.play_time} 步
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span
+                      className={`
+                        inline-block px-3 py-1 rounded-full text-sm font-semibold
+                        ${
+                          isEasterEgg
+                            ? 'bg-gradient-to-r from-yellow-200 via-red-200 to-purple-200 text-purple-900'
+                            : entry.max_tile >= 1024
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : entry.max_tile >= 512
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }
+                      `}
+                    >
+                      {isEasterEgg
+                        ? '10×1024'
+                        : entry.max_tile >= 1024
+                        ? `${(entry.max_tile / 1024).toFixed(3).replace(/\.?0+$/, '')}×1024`
+                        : entry.max_tile}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {/* 检测彩蛋字母：TRAENB4EVER */}
+                    {isEasterEgg ? (
+                      <span className="inline-block px-3 py-1 bg-gradient-to-r from-yellow-400 via-red-400 to-purple-500 text-white rounded-full text-xs font-bold animate-pulse">
+                        🎁 TRAENB4EVER
+                      </span>
+                    ) : (
+                      <div className="flex justify-center gap-1">
+                        {entry.letters_collected.map((letter, i) => (
+                          <span
+                            key={i}
+                            className="inline-block w-6 h-6 bg-trae-blue text-white rounded text-xs font-bold flex items-center justify-center"
+                          >
+                            {letter}
+                          </span>
+                        ))}
+                        {entry.letters_collected.length === 0 && (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right text-sm text-gray-500">
+                    {new Date(entry.created_at).toLocaleDateString('zh-CN')}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

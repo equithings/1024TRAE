@@ -108,12 +108,12 @@ export function addRandomTile(
     }
   }
 
-  // 根据已收集字母数量决定概率：T=10%, R=5%, A=4%, E=2%
+  // 根据已收集字母数量决定概率：T=10%, R=5%, A=3%, E=1%
   const letterProbabilities: Record<number, number> = {
     0: 0.10,  // T 的概率 10%
     1: 0.05,  // R 的概率 5%
-    2: 0.04,  // A 的概率 4%
-    3: 0.02,  // E 的概率 2%
+    2: 0.03,  // A 的概率 3% (从 4% 下调 1%)
+    3: 0.01,  // E 的概率 1% (从 2% 下调 1%)
   };
 
   const letterProbability = letterProbabilities[collectedLetters.length] || 0;
