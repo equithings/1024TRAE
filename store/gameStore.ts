@@ -262,7 +262,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       collectedLetters: [...state.collectedLetters],
     };
 
-    let { newBoard, moved, mergedScore, letterCollisions, mergedPosition } = gameMove(
+    let { newBoard, moved, mergedScore, mergeCount, letterCollisions, mergedPosition } = gameMove(
       state.board,
       direction,
       state.collectedLetters
@@ -270,9 +270,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (!moved) return; // 没有移动，不做任何操作
 
-    // 如果有合并，播放音效（使用防抖避免卡顿）
-    if (mergedScore > 0) {
+    // 根据合并次数选择音效和震动
+    if (mergeCount >= 2) {
+      // 连续合并（2次以上）：使用特殊音效和更强震动
+      playSoundDebounced('continue', 0.4);
+      vibrate(VibrationPatterns.multiMerge);
+    } else if (mergeCount === 1) {
+      // 单次合并：使用普通音效和震动
       playSoundDebounced('merge', 0.3);
+      vibrate(VibrationPatterns.singleMerge);
     }
 
     // 【方案1】处理字母碰撞

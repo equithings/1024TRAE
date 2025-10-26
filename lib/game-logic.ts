@@ -198,12 +198,14 @@ export function move(
   newBoard: (TileValue | null)[][];
   moved: boolean;
   mergedScore: number;
+  mergeCount: number; // 新增：合并次数
   letterCollisions: { letter: Letter; value: number }[]; // 新增：记录字母碰撞
   mergedPosition: { row: number; col: number } | null; // 新增：合并位置
 } {
   let newBoard = board.map(row => [...row]);
   let moved = false;
   let mergedScore = 0;
+  let mergeCount = 0; // 新增：合并次数统计
   const letterCollisions: { letter: Letter; value: number }[] = [];
   let mergedPosition: { row: number; col: number } | null = null;
 
@@ -217,11 +219,12 @@ export function move(
 
     if (numberCount === 1) {
       // ✅ 只有1个数字：只执行1次moveLine（避免一次性移动多格）
-      const { line, lineMoved, score, collisions, mergedCol } = moveLine(newBoard[row], collectedLetters);
+      const { line, lineMoved, score, collisions, mergedCol, mergedThisTime } = moveLine(newBoard[row], collectedLetters);
 
       if (lineMoved) {
         moved = true;
         mergedScore += score;
+        mergeCount += mergedThisTime; // 累计合并次数
         letterCollisions.push(...collisions);
         newBoard[row] = line;
 
@@ -236,12 +239,13 @@ export function move(
 
       // 持续移动当前行，直到无法再移动或合并
       while (rowMoved) {
-        const { line, lineMoved, score, collisions, mergedCol } = moveLine(newBoard[row], collectedLetters);
+        const { line, lineMoved, score, collisions, mergedCol, mergedThisTime } = moveLine(newBoard[row], collectedLetters);
         rowMoved = lineMoved;
 
         if (lineMoved) {
           moved = true;
           mergedScore += score;
+          mergeCount += mergedThisTime; // 累计合并次数
           letterCollisions.push(...collisions);
           newBoard[row] = line;
 
@@ -262,7 +266,7 @@ export function move(
   // 旋转回原方向
   newBoard = rotateBoard(newBoard, direction, true);
 
-  return { newBoard, moved, mergedScore, letterCollisions, mergedPosition };
+  return { newBoard, moved, mergedScore, mergeCount, letterCollisions, mergedPosition };
 }
 
 // 移动单行（向左）- 逐格移动策略：每次只移动一格，移动时立即合并
@@ -276,6 +280,7 @@ function moveLine(
   score: number;
   collisions: { letter: Letter; value: number }[]; // 字母碰撞记录
   mergedCol: number | null; // 合并发生的列位置
+  mergedThisTime: number; // 本次合并次数（0或1）
 } {
   const newLine: (TileValue | null)[] = [...line];
   let lineMoved = false;
@@ -284,6 +289,7 @@ function moveLine(
   const letterSequence: Letter[] = ['T', 'R', 'A', 'E'];
   const expectedLetter = collectedLetters.length < 4 ? letterSequence[collectedLetters.length] : null;
   let mergedCol: number | null = null;
+  let mergedThisTime = 0; // 本次合并次数
 
   // 步骤1：先尝试合并 - 从右到左扫描，找相邻相同的数字
   let merged = false;
@@ -304,6 +310,7 @@ function moveLine(
         lineMoved = true;
         merged = true;
         mergedCol = i - 1; // 记录合并位置
+        mergedThisTime = 1; // 记录合并次数
         break; // 本次只处理一次合并
       }
     }
@@ -318,6 +325,7 @@ function moveLine(
         lineMoved = true;
         merged = true;
         mergedCol = i - 1; // 记录合并位置
+        mergedThisTime = 1; // 记录合并次数
         break; // 本次只处理一次合并
       }
     }
@@ -355,6 +363,7 @@ function moveLine(
         lineMoved = true;
         merged = true;
         mergedCol = i - 1; // 记录合并位置
+        mergedThisTime = 1; // 记录合并次数
         break; // 本次只处理一次合并
       }
     }
@@ -376,7 +385,7 @@ function moveLine(
     }
   }
 
-  return { line: newLine, lineMoved, score, collisions, mergedCol };
+  return { line: newLine, lineMoved, score, collisions, mergedCol, mergedThisTime };
 }
 
 // 旋转棋盘

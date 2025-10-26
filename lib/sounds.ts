@@ -2,10 +2,11 @@
 
 import { assetPath } from './path';
 
-// 音效文件路径（暂时所有音效都使用同一个文件）
+// 音效文件路径
 // 使用 assetPath 函数以适配 GitHub Pages 的 basePath
 const SOUNDS = {
-  merge: assetPath('/sounds/foldedAreas.mp3'),
+  merge: assetPath('/sounds/foldedAreas.mp3'),       // 单次合并音效
+  continue: assetPath('/sounds/continue.mp3'),       // 连续合并音效（2次以上）
   move: assetPath('/sounds/foldedAreas.mp3'),
   collect: assetPath('/sounds/foldedAreas.mp3'),
   victory: assetPath('/sounds/foldedAreas.mp3'),
