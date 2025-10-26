@@ -3,10 +3,15 @@
 /**
  * 获取当前环境的 basePath
  * @returns basePath 字符串
+ *
+ * 配置逻辑：
+ * - GitHub Pages: 需要 /1024TRAE 前缀（通过环境变量 NEXT_PUBLIC_BASE_PATH=github 指定）
+ * - Vercel/EdgeOne/CF Pages/其他平台: 不需要前缀
+ * - 本地开发: 不需要前缀
  */
 export function getBasePath(): string {
-  // 在生产环境使用 GitHub Pages 的仓库名作为 basePath
-  return process.env.NODE_ENV === 'production' ? '/1024TRAE' : '';
+  // 只有在明确设置 NEXT_PUBLIC_BASE_PATH=github 时才使用 /1024TRAE 前缀
+  return process.env.NEXT_PUBLIC_BASE_PATH === 'github' ? '/1024TRAE' : '';
 }
 
 /**
