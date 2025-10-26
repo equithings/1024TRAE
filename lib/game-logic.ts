@@ -321,15 +321,42 @@ function moveLine(
         break; // 本次只处理一次合并
       }
     }
-    // 情况3：两个相同数字合并到左边
-    else if (typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue === rightValue) {
-      newLine[i - 1] = leftValue * 2; // 左边×2
-      score += leftValue * 2;
-      newLine[i] = null; // 右边消失
-      lineMoved = true;
-      merged = true;
-      mergedCol = i - 1; // 记录合并位置
-      break; // 本次只处理一次合并
+    // 情况3：数字合并逻辑
+    else if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+      let canMerge = false;
+      let mergedValue = 0;
+
+      // 标准合并：两个相同数字
+      if (leftValue === rightValue) {
+        canMerge = true;
+        mergedValue = leftValue * 2;
+      }
+      // 特殊合并：两个都是1024的偶数倍（且都 >= 2048）
+      else if (leftValue >= 2048 && rightValue >= 2048) {
+        const leftMultiple = leftValue / 1024;
+        const rightMultiple = rightValue / 1024;
+
+        // 检查是否都是1024的整数倍且都是偶数倍
+        if (
+          leftValue % 1024 === 0 &&
+          rightValue % 1024 === 0 &&
+          leftMultiple % 2 === 0 &&
+          rightMultiple % 2 === 0
+        ) {
+          canMerge = true;
+          mergedValue = leftValue + rightValue; // 两数相加
+        }
+      }
+
+      if (canMerge) {
+        newLine[i - 1] = mergedValue; // 合并结果放在左边
+        score += mergedValue;
+        newLine[i] = null; // 右边消失
+        lineMoved = true;
+        merged = true;
+        mergedCol = i - 1; // 记录合并位置
+        break; // 本次只处理一次合并
+      }
     }
   }
 

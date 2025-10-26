@@ -2,12 +2,30 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { letterEffects } from '@/lib/letter-system';
 
+const LETTER_TIPS_VIEWED_KEY = 'trae-1024-letter-tips-viewed';
+
 export default function LetterTips() {
   const [isExpanded, setIsExpanded] = useState(true); // 默认展开
+  const [shouldShow, setShouldShow] = useState(false); // 是否显示组件
+
+  // 检查是否首次访问
+  useEffect(() => {
+    const hasViewed = localStorage.getItem(LETTER_TIPS_VIEWED_KEY);
+    if (!hasViewed) {
+      setShouldShow(true);
+      // 标记为已查看
+      localStorage.setItem(LETTER_TIPS_VIEWED_KEY, 'true');
+    }
+  }, []);
+
+  // 如果不应该显示，返回 null
+  if (!shouldShow) {
+    return null;
+  }
 
   // 显示 TRAE + NB 六个字母的效果
   const mainLetters = ['T', 'R', 'A', 'E'] as const;

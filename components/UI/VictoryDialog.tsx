@@ -2,10 +2,29 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 
 export default function VictoryDialog() {
   const { showVictoryDialog, continueGame, endGame } = useGameStore();
+
+  // 键盘快捷键支持
+  useEffect(() => {
+    if (!showVictoryDialog) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        continueGame(); // Enter = 继续游戏
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        endGame(); // Esc = 结束游戏
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showVictoryDialog, continueGame, endGame]);
 
   if (!showVictoryDialog) return null;
 
@@ -26,12 +45,14 @@ export default function VictoryDialog() {
               className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
             >
               继续游戏
+              <span className="hidden md:inline text-xs opacity-75 ml-2">(Enter)</span>
             </button>
             <button
               onClick={endGame}
               className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
             >
               结束游戏
+              <span className="hidden md:inline text-xs opacity-75 ml-2">(Esc)</span>
             </button>
           </div>
         </div>

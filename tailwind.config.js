@@ -21,10 +21,11 @@ module.exports = {
         'tile-16': '#F59563',
         'tile-32': '#F67C5F',
         'tile-64': '#F65E3B',
-        'tile-128': '#EDCF72',
-        'tile-256': '#EDCC61',
-        'tile-512': '#EDC850',
-        'tile-1024': '#EDC22E',
+        // 莫兰迪色系 - 明显区分
+        'tile-128': '#42966f',      // 薄荷绿（Mint Green）
+        'tile-256': '#b84d4dff',      // 藕粉色（Dusty Rose）
+        'tile-512': '#2b66a1ff',      // 雾霾蓝（Dusty Blue）
+        'tile-1024': '#7d6149',     // 焦糖金（Caramel Gold）
       },
       fontFamily: {
         mono: ['"Courier New"', 'monospace'],

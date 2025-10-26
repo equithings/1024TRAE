@@ -14,6 +14,8 @@ export interface GameDevTools {
   triggerEasterEgg: () => void;
   testTraen: () => void;
   testTraenb: () => void;
+  fillRandomMultiples: () => void;
+  fixGameOverBug: () => void;
 }
 
 export function createDevTools(): GameDevTools {
@@ -164,6 +166,78 @@ export function createDevTools(): GameDevTools {
       });
       console.log('✅ 已设置 TRAENB 字母组合，可以测试排行榜样式');
     },
+
+    // 填充随机的大倍数1024方块（用于测试渐变色）
+    fillRandomMultiples: () => {
+      // 生成14个不同的偶数倍1024（从2倍到28倍，留2个空格）
+      const multiples = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28];
+
+      // 打乱数组顺序（Fisher-Yates洗牌算法）
+      for (let i = multiples.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [multiples[i], multiples[j]] = [multiples[j], multiples[i]];
+      }
+
+      // 创建新棋盘并填充（保留2个空格，避免游戏结束）
+      const newBoard: (number | null)[][] = Array(4).fill(null).map(() => Array(4).fill(null));
+      let index = 0;
+
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
+          if (index < multiples.length) {
+            newBoard[row][col] = multiples[index] * 1024;
+            index++;
+          } else {
+            newBoard[row][col] = null; // 保留空格
+          }
+        }
+      }
+
+      // 找出最大值作为分数
+      const maxValue = Math.max(...multiples) * 1024;
+
+      // 重置游戏状态（避免游戏结束状态）
+      useGameStore.setState({
+        board: newBoard as any,
+        score: maxValue,
+        isGameOver: false, // 确保游戏未结束
+        isVictory: false,  // 重置胜利状态
+      });
+
+      console.log('✅ 已填充14个随机大倍数1024方块（保留2个空格）：');
+      console.table(newBoard.map(row => row.map(val => val ? `${val / 1024}×1024` : 'null')));
+      console.log(`📊 当前最大值: ${maxValue / 1024}×1024 (${maxValue})`);
+      console.log('💡 保留了2个空格，避免触发游戏结束状态');
+    },
+
+    // 修复"游戏结束但没有提交按钮"的bug
+    fixGameOverBug: () => {
+      const state = useGameStore.getState();
+
+      // 在当前棋盘中找到2个空位
+      const newBoard = state.board.map(row => [...row]);
+      let emptyCount = 0;
+
+      for (let row = 3; row >= 0 && emptyCount < 2; row--) {
+        for (let col = 3; col >= 0 && emptyCount < 2; col--) {
+          if (newBoard[row][col] !== null) {
+            newBoard[row][col] = null;
+            emptyCount++;
+          }
+        }
+      }
+
+      // 重置游戏状态
+      useGameStore.setState({
+        board: newBoard as any,
+        isGameOver: false,
+        isVictory: false,
+      });
+
+      console.log('✅ 已修复游戏结束状态');
+      console.log('💡 已在棋盘中创建2个空格，游戏可以继续');
+      console.log('🎮 现在可以正常移动方块了');
+    },
   };
 }
 
@@ -173,15 +247,17 @@ export function mountDevTools() {
     (window as any).__GAME_DEV__ = createDevTools();
     console.log('🎮 开发工具已挂载到 window.__GAME_DEV__');
     console.log('💡 使用示例：');
-    console.log('  window.__GAME_DEV__.setMoveCount(1020)     // 设置步数为1020');
-    console.log('  window.__GAME_DEV__.setScore(2048)         // 设置分数为2048');
-    console.log('  window.__GAME_DEV__.setLetters("TRAEN")    // 设置字母为TRAEN');
-    console.log('  window.__GAME_DEV__.setLetters("TRAENB")   // 设置字母为TRAENB');
-    console.log('  window.__GAME_DEV__.setLetters(["T","R"])  // 设置字母为T和R');
-    console.log('  window.__GAME_DEV__.getState()             // 查看当前状态');
-    console.log('  window.__GAME_DEV__.triggerVictory()       // 触发胜利');
-    console.log('  window.__GAME_DEV__.triggerEasterEgg()     // 触发彩蛋');
-    console.log('  window.__GAME_DEV__.testTraen()            // 测试TRAEN样式');
-    console.log('  window.__GAME_DEV__.testTraenb()           // 测试TRAENB样式');
+    console.log('  window.__GAME_DEV__.setMoveCount(1020)       // 设置步数为1020');
+    console.log('  window.__GAME_DEV__.setScore(2048)           // 设置分数为2048');
+    console.log('  window.__GAME_DEV__.setLetters("TRAEN")      // 设置字母为TRAEN');
+    console.log('  window.__GAME_DEV__.setLetters("TRAENB")     // 设置字母为TRAENB');
+    console.log('  window.__GAME_DEV__.setLetters(["T","R"])    // 设置字母为T和R');
+    console.log('  window.__GAME_DEV__.getState()               // 查看当前状态');
+    console.log('  window.__GAME_DEV__.triggerVictory()         // 触发胜利');
+    console.log('  window.__GAME_DEV__.triggerEasterEgg()       // 触发彩蛋');
+    console.log('  window.__GAME_DEV__.testTraen()              // 测试TRAEN样式');
+    console.log('  window.__GAME_DEV__.testTraenb()             // 测试TRAENB样式');
+    console.log('  window.__GAME_DEV__.fillRandomMultiples()    // 填充14个随机大倍数1024');
+    console.log('  window.__GAME_DEV__.fixGameOverBug()         // 修复游戏结束bug');
   }
 }

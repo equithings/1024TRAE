@@ -5,9 +5,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // GitHub Pages 部署配置（仅生产环境）
-  basePath: process.env.NODE_ENV === 'production' ? '/1024TRAE' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/1024TRAE' : '',
+  // 条件性 basePath 配置
+  // - GitHub Pages: 需要 /1024TRAE 前缀
+  // - Vercel 等其他平台: 不需要前缀（由平台自动处理路由）
+  // - 本地开发: 不使用前缀
+  basePath: process.env.VERCEL ? '' : (process.env.NODE_ENV === 'production' ? '/1024TRAE' : ''),
+  assetPrefix: process.env.VERCEL ? '' : (process.env.NODE_ENV === 'production' ? '/1024TRAE' : ''),
 }
 
 module.exports = nextConfig

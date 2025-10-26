@@ -8,19 +8,33 @@ import { useGameStore } from '@/store/gameStore';
 import { letterEffects } from '@/lib/letter-system';
 import { Letter } from '@/types/game';
 
+const LETTER_NOTIFICATION_PREFIX = 'trae-1024-letter-notified-';
+
 export default function LetterNotification() {
   const { lastGeneratedLetter } = useGameStore();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (lastGeneratedLetter !== null) {
-      setVisible(true);
+      // 检查这个字母是否已经显示过通知
+      const notificationKey = LETTER_NOTIFICATION_PREFIX + lastGeneratedLetter;
+      const hasNotified = localStorage.getItem(notificationKey);
+
+      if (!hasNotified) {
+        // 首次显示这个字母的通知
+        setVisible(true);
+        // 标记为已通知
+        localStorage.setItem(notificationKey, 'true');
+      } else {
+        // 已经显示过，不再显示
+        setVisible(false);
+      }
     } else {
       setVisible(false);
     }
   }, [lastGeneratedLetter]);
 
-  if (!lastGeneratedLetter) return null;
+  if (!lastGeneratedLetter || !visible) return null;
 
   const effect = letterEffects[lastGeneratedLetter];
 

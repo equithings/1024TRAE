@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, markGameAsSubmitted } from '@/store/gameStore';
 import { submitScore } from '@/lib/supabase';
@@ -62,6 +62,26 @@ export default function EasterEgg1048576Modal({ isVisible }: EasterEgg1048576Mod
   const handleEndGame = () => {
     restart();
   };
+
+  // 键盘快捷键支持（仅在弹窗显示时启用）
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (submitSuccess) return; // 提交成功后不响应快捷键
+
+      if (e.key === 'Enter' && playerName.trim() && !submitting) {
+        e.preventDefault();
+        handleSubmit(); // Enter = 提交排行榜
+      } else if (e.key === 'Escape' && !submitting) {
+        e.preventDefault();
+        handleEndGame(); // Esc = 结束游戏
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible, submitSuccess, playerName, submitting]);
 
   if (!isVisible) return null;
 
@@ -154,6 +174,7 @@ export default function EasterEgg1048576Modal({ isVisible }: EasterEgg1048576Mod
                     className="flex-1 bg-gradient-to-r from-yellow-500 via-red-500 to-purple-600 text-white py-3 rounded-lg font-bold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     {submitting ? '提交中...' : '🎁 提交排行榜'}
+                    <span className="hidden md:inline text-xs opacity-75 ml-2">(Enter)</span>
                   </button>
                   <button
                     onClick={handleEndGame}
@@ -161,6 +182,7 @@ export default function EasterEgg1048576Modal({ isVisible }: EasterEgg1048576Mod
                     className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-bold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     🏁 结束游戏
+                    <span className="hidden md:inline text-xs opacity-75 ml-2">(Esc)</span>
                   </button>
                 </div>
 

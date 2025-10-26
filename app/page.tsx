@@ -18,15 +18,22 @@ export default function Home() {
   const { restart, endGame, isGameOver, isVictory, score, collectedLetters, moveCount, continueAfterVictory, showEasterEgg1048576Modal } = useGameStore();
   const [showVictoryModal, setShowVictoryModal] = useState(false);
 
+  // 检查是否达成了基本胜利条件（TRAE + 1024）
+  const hasMetVictoryConditions =
+    collectedLetters.length >= 4 &&
+    collectedLetters.slice(0, 4).join('') === 'TRAE' &&
+    score >= 1024;
+
   // 监听胜利状态，只有在游戏结束时才显示提交弹窗
   // 如果选择了"继续游戏"后失败，也应该显示提交弹窗
+  // 即使 isVictory=false，但满足了 TRAE+1024 条件，也应该显示提交弹窗
   useEffect(() => {
-    if ((isVictory && isGameOver) || (isGameOver && continueAfterVictory)) {
+    if ((isVictory && isGameOver) || (isGameOver && continueAfterVictory) || (isGameOver && hasMetVictoryConditions)) {
       setShowVictoryModal(true);
     } else {
       setShowVictoryModal(false);
     }
-  }, [isVictory, isGameOver, continueAfterVictory]);
+  }, [isVictory, isGameOver, continueAfterVictory, hasMetVictoryConditions]);
 
   // 预加载音效 & 挂载开发工具（仅开发环境）
   useEffect(() => {
@@ -86,15 +93,14 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* 游戏板和字母效果说明 - 并排显示 */}
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:items-start">
-          {/* 左侧：游戏板 - PC端占60%-80%宽度 */}
-          <div className="w-full lg:flex-1 lg:min-w-[60%] lg:max-w-[80%] flex justify-center">
-            <GameBoard />
-          </div>
+        {/* 游戏板 - 居中显示 */}
+        <div className="flex justify-center">
+          <GameBoard />
+        </div>
 
-          {/* 右侧：字母效果说明 - 占剩余空间 */}
-          <div className="w-full lg:flex-shrink-0 lg:w-auto lg:min-w-[280px] lg:max-w-[320px]">
+        {/* 字母效果说明 - 居中显示，只在首次访问时显示 */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl">
             <LetterTips />
           </div>
         </div>
@@ -130,8 +136,8 @@ export default function Home() {
         {/* 1024×1024 彩蛋提交面板 */}
         <EasterEgg1048576Modal isVisible={showEasterEgg1048576Modal} />
 
-        {/* 失败提示 - 只在未达成胜利条件且未选择继续游戏时显示 */}
-        {isGameOver && !isVictory && !continueAfterVictory && (
+        {/* 失败提示 - 只在真正失败时显示（未达到TRAE+1024条件） */}
+        {isGameOver && !isVictory && !continueAfterVictory && !hasMetVictoryConditions && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl">
               <div className="text-6xl mb-4">😔</div>

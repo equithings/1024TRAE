@@ -25,11 +25,42 @@ function getTileColor(value: number): string {
     64: 'bg-tile-64 text-white',
     128: 'bg-tile-128 text-white',
     256: 'bg-tile-256 text-white',
-    512: 'bg-gradient-to-br from-tile-512 to-yellow-600 text-white',
-    1024: 'bg-gradient-to-br from-tile-1024 to-yellow-700 text-white',
-    2048: 'bg-gradient-to-br from-yellow-500 to-yellow-700 text-white',
+    512: 'bg-tile-512 text-white',
+    1024: 'bg-tile-1024 text-white',
   };
-  return colors[value] || 'bg-gray-600 text-white';
+  return colors[value] || '';
+}
+
+// 为 >= 2048 (即 >= 2×1024) 的倍数生成莫兰迪风格渐变色
+function getMultipleTileGradient(value: number): React.CSSProperties {
+  const multiple = Math.floor(value / 1024);
+
+  if (multiple > 1024) {
+    // 超过 1024×1024，使用深灰色渐变（只有明暗区别）
+    const variation = Math.floor((multiple - 1024) / 100) % 10; // 每100倍循环一次，0-9
+    const lightness1 = 28 + variation * 2; // 28-46% 亮度范围（加深）
+    const lightness2 = lightness1 - 8; // 渐变终点更深
+
+    return {
+      background: `linear-gradient(to bottom right, hsl(220, 18%, ${lightness1}%), hsl(220, 18%, ${lightness2}%))`,
+      color: 'white'
+    };
+  } else {
+    // 2×1024 到 1024×1024，使用彩色莫兰迪渐变（加深版）
+    // 使用质数23作为乘数，确保色相分布均匀且每个倍数都不同
+    const hue = (multiple * 23) % 360;
+    const saturation = 45 + (multiple % 7) * 4; // 45-73% 饱和度（提高饱和度）
+    const lightness = 42 + (multiple % 5) * 2; // 42-50% 亮度（降低亮度）
+
+    // 渐变的第二个颜色：色相偏移30度，亮度降低
+    const hue2 = (hue + 30) % 360;
+    const lightness2 = lightness - 10;
+
+    return {
+      background: `linear-gradient(to bottom right, hsl(${hue}, ${saturation}%, ${lightness}%), hsl(${hue2}, ${saturation}%, ${lightness2}%))`,
+      color: 'white'
+    };
+  }
 }
 
 // 获取字体大小类名（4x4网格优化）
@@ -44,11 +75,17 @@ function getFontSize(value: TileValue): string {
 
 export default function Tile({ value, position, isNew = false, isMerged = false, isLetterEffectTriggered = false }: TileProps) {
   const isLetterTile = isLetter(value);
-  
+
+  // 判断是否需要动态渐变色（>= 2048 的数字）
+  const isMultipleTile = typeof value === 'number' && value >= 2048;
+
   const className = isLetterTile
     ? getLetterClassName(value)
     : getTileColor(value as number);
-  
+
+  // 为 >= 2048 的数字生成渐变色样式
+  const gradientStyle = isMultipleTile ? getMultipleTileGradient(value as number) : undefined;
+
   const fontSize = getFontSize(value);
 
   // 字母效果触发时，所有数字方块都弹一下
@@ -57,20 +94,21 @@ export default function Tile({ value, position, isNew = false, isMerged = false,
   return (
     <motion.div
       initial={{ scale: isNew ? 0 : 1 }}
-      animate={{ 
+      animate={{
         scale: shouldBounce ? 1.05 : 1,
       }}
       exit={{ scale: 0 }}
-      transition={{ 
-        type: 'spring', 
-        stiffness: 300, 
+      transition={{
+        type: 'spring',
+        stiffness: 300,
         damping: 20,
         duration: 0.15
       }}
+      style={gradientStyle} // 使用动态生成的渐变色
       className={`
         absolute inset-0 w-full h-full rounded-lg
         flex items-center justify-center
-        font-bold ${isLetterTile ? '' : fontSize} ${isLetterTile ? '' : className}
+        font-bold ${isLetterTile ? '' : fontSize} ${isLetterTile || isMultipleTile ? '' : className}
         shadow-lg
         ${isLetterTile ? 'bg-[#32F08C] ring-2 ring-offset-2 ring-white' : ''}
         ${isNew ? 'tile-new' : ''}
@@ -83,11 +121,13 @@ export default function Tile({ value, position, isNew = false, isMerged = false,
           {value}
         </div>
       ) : (
-        // 数字方块显示：超过1024显示为 x×1024
-        typeof value === 'number' && value > 1024 ? (
+        // 数字方块显示：>= 1024 时同时显示具体数字和倍数
+        typeof value === 'number' && value >= 1024 ? (
           <div className="flex flex-col items-center justify-center leading-tight">
-            <div className="text-2xl sm:text-3xl">{(value / 1024).toFixed(3).replace(/\.?0+$/, '')}</div>
-            <div className="text-xs sm:text-sm opacity-90">×1024</div>
+            <div className="text-lg sm:text-xl font-bold">{value.toLocaleString()}</div>
+            <div className="text-xs sm:text-sm opacity-75">
+              {(value / 1024).toFixed(3).replace(/\.?0+$/, '')}×1024
+            </div>
           </div>
         ) : (
           value

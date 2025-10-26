@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { submitScore } from '@/lib/supabase';
@@ -109,6 +109,45 @@ export default function VictoryModal({
     setShowConfirmDialog(false);
   };
 
+  // 键盘快捷键支持（仅在弹窗显示时启用）
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 如果正在显示确认对话框，使用不同的快捷键
+      if (showConfirmDialog) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleCancelSkip(); // Enter = 返回提交
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          handleConfirmSkip(); // Esc = 确认跳过
+        }
+        return;
+      }
+
+      // 正常提交界面的快捷键
+      if (!submitted) {
+        if (e.key === 'Enter' && playerName.trim() && !isSubmitting) {
+          e.preventDefault();
+          handleSubmit(); // Enter = 提交
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          handleTrySkip(); // Esc = 跳过
+        }
+      } else {
+        // 提交成功后的快捷键
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleConfirmSkip(); // Enter = 再来一局
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible, showConfirmDialog, submitted, playerName, isSubmitting]);
+
   return (
     <AnimatePresence>
       {isVisible && (
@@ -205,12 +244,14 @@ export default function VictoryModal({
                     className="flex-1 bg-gradient-to-r from-trae-blue to-trae-purple text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? '提交中...' : '提交到排行榜'}
+                    <span className="hidden md:inline text-xs opacity-75 ml-2">(Enter)</span>
                   </button>
                   <button
                     onClick={handleTrySkip}
                     className="px-6 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >
                     跳过
+                    <span className="hidden md:inline text-xs opacity-75 ml-2">(Esc)</span>
                   </button>
                 </>
               ) : (
@@ -220,6 +261,7 @@ export default function VictoryModal({
                     className="flex-1 bg-gradient-to-r from-trae-blue to-trae-purple text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                   >
                     再来一局
+                    <span className="hidden md:inline text-xs opacity-75 ml-2">(Enter)</span>
                   </button>
                   <Link
                     href="/leaderboard"
@@ -268,12 +310,14 @@ export default function VictoryModal({
                         className="flex-1 bg-gradient-to-r from-trae-blue to-trae-purple text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                       >
                         返回提交
+                        <span className="hidden md:inline text-xs opacity-75 ml-2">(Enter)</span>
                       </button>
                       <button
                         onClick={handleConfirmSkip}
                         className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                       >
                         确认跳过
+                        <span className="hidden md:inline text-xs opacity-75 ml-2">(Esc)</span>
                       </button>
                     </div>
                   </motion.div>
