@@ -51,6 +51,6 @@ export const VibrationPatterns = {
   error: [200, 100, 200] as number[],
   // 单次合并震动
   singleMerge: 100,
-  // 连续合并震动（更强，2次以上）- 长-短-长-短-超长
-  multiMerge: [150, 40, 150, 40, 250] as number[],
+  // 连续合并震动（统一为简单震动）
+  multiMerge: 100,
 };

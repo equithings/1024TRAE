@@ -46,10 +46,10 @@ export default function LetterNotification() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -50, scale: 0.9 }}
           transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
-          className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
+          className="fixed top-24 left-0 right-0 z-50 pointer-events-none flex justify-center"
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl border-4 p-6 flex items-center gap-4 min-w-[320px]"
+            className="bg-white rounded-2xl shadow-2xl border-4 p-6 flex items-center gap-4 w-[320px]"
             style={{ borderColor: effect.color }}
           >
             {/* 字母图标 */}
