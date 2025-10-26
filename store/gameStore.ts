@@ -363,8 +363,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newScore = getMaxTile(newBoard);
     const newBestScore = Math.max(state.bestScore, newScore);
 
-    // 🎁 隐藏彩蛋检测：分数=1024 且 步数=1024
-    const isEasterEgg = newScore === 1024 && state.moveCount + 1 === 1024;
+    // 🎁 隐藏彩蛋检测：分数=1024 且 步数=512
+    const isEasterEgg = newScore === 1024 && state.moveCount + 1 === 512;
 
     // 检查胜利条件（只在未选择继续游戏时才设置胜利状态）
     const victoryConditionMet = checkVictory(newBoard, newCollectedLetters) || isEasterEgg;
@@ -543,8 +543,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   endGame: () => {
     const state = get();
 
-    // 🎁 隐藏彩蛋检测：分数=1024 且 步数=1024
-    const isEasterEgg = state.score === 1024 && state.moveCount === 1024;
+    // 🎁 隐藏彩蛋检测：分数=1024 且 步数=512
+    const isEasterEgg = state.score === 1024 && state.moveCount === 512;
 
     // 检查是否满足通关条件：收集完 TRAE + 分数不低于 1024
     const hasAllLetters = state.collectedLetters.includes('T') &&

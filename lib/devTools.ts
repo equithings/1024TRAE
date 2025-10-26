@@ -115,7 +115,7 @@ export function createDevTools(): GameDevTools {
       console.log('✅ 已触发胜利条件');
     },
 
-    // 触发隐藏彩蛋（1024步 + 1024分）
+    // 触发隐藏彩蛋（512步 + 1024分）
     triggerEasterEgg: () => {
       const state = useGameStore.getState();
       const newBoard = state.board.map(r => [...r]);
@@ -126,13 +126,13 @@ export function createDevTools(): GameDevTools {
       useGameStore.setState({
         board: newBoard,
         score: 1024,
-        moveCount: 1024,
+        moveCount: 512,
         collectedLetters: ['T', 'R', 'A', 'E'] as any,
         isVictory: true,
         isEasterEgg1024: true,
         showVictoryDialog: true,
       });
-      console.log('✅ 已触发隐藏彩蛋（1024×1024）');
+      console.log('✅ 已触发隐藏彩蛋（512步×1024分）');
     },
 
     // 快捷方法：测试 TRAEN 样式
