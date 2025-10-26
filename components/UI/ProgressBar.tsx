@@ -80,7 +80,7 @@ export default function ProgressBar() {
         </>
       </div>
       <div className="flex-1" />
-      <div className="text-right">
+      <div className="hidden md:block text-right">
         <div className="text-sm text-gray-600">目标</div>
         <div className="text-2xl font-bold text-yellow-600">1024</div>
       </div>
