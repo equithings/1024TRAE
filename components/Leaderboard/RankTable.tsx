@@ -216,7 +216,7 @@ export default function RankTable() {
                       `}
                     >
                       {isEasterEgg
-                        ? '10×1024'
+                        ? '1024×1024'
                         : entry.max_tile >= 1024
                         ? (
                             <div className="flex flex-col items-center justify-center leading-tight">

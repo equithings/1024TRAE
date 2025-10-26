@@ -270,14 +270,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (!moved) return; // 没有移动，不做任何操作
 
-    // 根据合并次数选择音效和震动
+    // 移动音效：只要执行了移动操作就播放
+    playSoundDebounced('move', 0.3);
+
+    // 合并音效和震动：根据合并次数选择
     if (mergeCount >= 2) {
-      // 连续合并（2次以上）：使用特殊音效和更强震动
+      // 连续合并（2次以上）：使用合并音效和更强震动
       playSoundDebounced('continue', 0.4);
       vibrate(VibrationPatterns.multiMerge);
     } else if (mergeCount === 1) {
-      // 单次合并：使用普通音效和震动
-      playSoundDebounced('merge', 0.3);
+      // 单次合并：使用合并音效和震动
+      playSoundDebounced('continue', 0.4);
       vibrate(VibrationPatterns.singleMerge);
     }
 
@@ -300,13 +303,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (letter === 'N') {
           newBoard = applySpecialEffect1(newBoard);
           newMinTileValue = 128;
-          playSound('collect', 0.4);
           letterEffectTriggered = true; // 标记字母效果触发
           vibrate(VibrationPatterns.letterCollect); // 触发震动
         } else if (letter === 'B') {
           newBoard = applySpecialEffect2(newBoard);
           newMinTileValue = 512;
-          playSound('collect', 0.4);
           letterEffectTriggered = true; // 标记字母效果触发
           vibrate(VibrationPatterns.letterCollect); // 触发震动
         }
@@ -327,24 +328,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
             case 'T':
               // Think - 将所有数字从大到小重新排列
               newBoard = applyTEffect(newBoard);
-              playSound('collect', 0.4);
               break;
 
             case 'R':
               // Real - 碰撞时数字已经×2了，这里不需要额外操作
-              playSound('collect', 0.4);
               break;
 
             case 'A':
               // Adaptive - 消除<32的方块，生成8个32的方块
               newBoard = applyAEffect(newBoard);
-              playSound('collect', 0.4);
               break;
 
             case 'E':
               // Engineer - 保留最大数字×4，清除其他所有数字
               newBoard = applyEEffect(newBoard);
-              playSound('collect', 0.4);
               break;
           }
         }
@@ -407,7 +404,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // 如果序列匹配且游戏没有失败，触发彩蛋
       if (sequenceMatched && !gameOver) {
         showEasterEgg1048576Modal = true;
-        playSound('collect', 0.6); // 播放彩蛋触发音效
         vibrate(VibrationPatterns.letterCollect); // 震动反馈
       }
     }
