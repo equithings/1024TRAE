@@ -95,8 +95,8 @@ export function addRandomTile(
   };
 
   const guaranteedThresholdsEaster: Record<string, number> = {
-    'N': 512,   // N 字母保底 512 步
-    'B': 1024,  // B 字母保底 1024 步
+    'N': 412,   // N 字母保底 412 步
+    'B': 700,   // B 字母保底 700 步
   };
 
   // 【彩蛋字母生成逻辑】只在收集完 TRAE 之后，且每个字母只出现 1 次
@@ -104,20 +104,20 @@ export function addRandomTile(
     const hasCollectedN = collectedLetters.includes('N');
     const hasCollectedB = collectedLetters.includes('B');
 
-    // B 字母：保底 1024 步或 0.05% 概率
-    if (!hasCollectedB && (movesSinceLastLetter >= guaranteedThresholdsEaster['B'] || rand < 0.0005)) {
-      const targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
-      const [row, col] = targetPosition;
-      board[row][col] = 'B';
-      return { success: true, letterGenerated: 'B' };
-    }
-
-    // N 字母：保底 512 步或 0.2% 概率
+    // N 字母：保底 412 步或 0.2% 概率（优先生成N字母）
     if (!hasCollectedN && (movesSinceLastLetter >= guaranteedThresholdsEaster['N'] || (rand >= 0.0005 && rand < 0.0025))) {
       const targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
       const [row, col] = targetPosition;
       board[row][col] = 'N';
       return { success: true, letterGenerated: 'N' };
+    }
+
+    // B 字母：必须先收集N字母，保底 700 步或 0.05% 概率
+    if (!hasCollectedB && hasCollectedN && (movesSinceLastLetter >= guaranteedThresholdsEaster['B'] || rand < 0.0005)) {
+      const targetPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
+      const [row, col] = targetPosition;
+      board[row][col] = 'B';
+      return { success: true, letterGenerated: 'B' };
     }
   }
 

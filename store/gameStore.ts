@@ -42,10 +42,10 @@ interface GameStore {
   isEasterEgg1024: boolean; // 1024×1024 隐藏彩蛋标记
   movesSinceLastLetter: number; // 自上次出现字母后的移动次数（用于保底机制）
 
-  // 1024×1024 彩蛋按键序列状态
-  firstTime1048576Achieved: boolean; // 是否首次达到 1048576
+  // 1024步彩蛋按键序列状态
+  firstTime1048576Achieved: boolean; // 是否首次达到 1024 步（彩蛋2触发条件）
   easterEggKeySequence: Direction[]; // 彩蛋按键序列记录
-  showEasterEgg1048576Modal: boolean; // 是否显示 1048576 彩蛋提交面板
+  showEasterEgg1048576Modal: boolean; // 是否显示 1024步彩蛋提交面板
 
   // 字母效果状态
   showPreview: boolean; // T字母效果
@@ -376,17 +376,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 检查失败条件
     const gameOver = !canMove(newBoard);
 
-    // === 🎁 1024×1024 彩蛋按键序列检测 ===
+    // === 🎁 1024步彩蛋按键序列检测 ===
     let newFirstTime1048576Achieved = state.firstTime1048576Achieved;
     let newEasterEggKeySequence = [...state.easterEggKeySequence];
     let showEasterEgg1048576Modal = false;
 
-    // 检测是否首次达到 1048576
-    if (!state.firstTime1048576Achieved && newScore === 1024 * 1024) {
+    // 检测是否首次达到 1024 步
+    if (!state.firstTime1048576Achieved && state.moveCount + 1 >= 1024) {
       newFirstTime1048576Achieved = true;
     }
 
-    // 如果已经达到 1048576，开始记录按键序列
+    // 如果已经达到 1024 步，开始记录按键序列
     if (newFirstTime1048576Achieved && !state.showEasterEgg1048576Modal) {
       // 添加当前方向到序列
       newEasterEggKeySequence.push(direction);
@@ -433,7 +433,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isEasterEgg1024: isEasterEgg, // 标记彩蛋状态
       movesSinceLastLetter: newMovesSinceLastLetter, // 更新计数器
       lastGeneratedLetter: letterGenerated, // 记录生成的字母
-      firstTime1048576Achieved: newFirstTime1048576Achieved, // 1048576 彩蛋状态
+      firstTime1048576Achieved: newFirstTime1048576Achieved, // 1024步彩蛋状态
       easterEggKeySequence: newEasterEggKeySequence, // 按键序列
       showEasterEgg1048576Modal: showEasterEgg1048576Modal, // 彩蛋提交面板显示状态
     };

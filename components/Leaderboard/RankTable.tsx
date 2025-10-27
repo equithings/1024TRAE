@@ -215,18 +215,16 @@ export default function RankTable() {
                         }
                       `}
                     >
-                      {isEasterEgg
-                        ? '?×1024'
-                        : entry.max_tile >= 1024
-                        ? (
-                            <div className="flex flex-col items-center justify-center leading-tight">
-                              <div className="font-bold">{entry.max_tile.toLocaleString()}</div>
-                              <div className="text-xs opacity-75">
-                                {(entry.max_tile / 1024).toFixed(3).replace(/\.?0+$/, '')}×1024
-                              </div>
-                            </div>
-                          )
-                        : entry.max_tile}
+                      {entry.max_tile >= 1024 ? (
+                        <div className="flex flex-col items-center justify-center leading-tight">
+                          <div className="font-bold">{entry.max_tile.toLocaleString()}</div>
+                          <div className="text-xs opacity-75">
+                            {(entry.max_tile / 1024).toFixed(3).replace(/\.?0+$/, '')}×1024
+                          </div>
+                        </div>
+                      ) : (
+                        entry.max_tile
+                      )}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">

@@ -1,4 +1,4 @@
-// 1024×1024 彩蛋提交面板
+// 1024步彩蛋提交面板
 
 'use client';
 
@@ -115,7 +115,7 @@ export default function EasterEgg1048576Modal({ isVisible }: EasterEgg1048576Mod
                     恭喜发现彩蛋！
                   </h2>
                   <p className="text-lg text-gray-700 font-semibold">
-                    1024 × 1024 = 终极成就
+                    1024步 × 神秘序列 = 终极成就
                   </p>
                 </div>
 
